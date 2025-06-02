@@ -8,6 +8,8 @@ add_executable(project1 main.cpp
         include/Node.h
         include/CircuitElement.h
         src/CircuitElement.cpp
+        include/Resistor.h
+        src/Resistor.cpp
 )
 
 target_include_directories(project1 PUBLIC
