@@ -1,0 +1,18 @@
+# CLion/IntelliJ specific files
+.idea/
+cmake-build-*/
+
+# Build artifacts
+*.o
+*.a
+*.so
+*.lib
+*.dll
+*.exe
+*.out
+
+# Other common ignores
+*.log
+*.tmp
+*.DS_Store
+Thumbs.db
