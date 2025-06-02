@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 add_executable(project1 main.cpp
         src/Node.cpp
         include/Node.h
+        include/CircuitElement.h
+        src/CircuitElement.cpp
 )
 
 target_include_directories(project1 PUBLIC

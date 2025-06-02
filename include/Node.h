@@ -3,21 +3,24 @@
 #include <string>
 #include <vector>
 
+using namespace std;
+
 class Node {
 private:
     int nodeId;
-    std::string nodeName;
+    string nodeName;
 
 public:
-    Node(int id, const std::string& name);
+    Node(int id, const string& name);
 
     ~Node();
 
 
     int getId() const;
-    std::string getName() const;
+    string getName() const;
 
     void setId(int newId);
-    void setName(const std::string& newName);
+    void setName(const string& newName);
 
 };
+
