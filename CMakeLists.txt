@@ -10,6 +10,10 @@ add_executable(project1 main.cpp
         src/CircuitElement.cpp
         include/Resistor.h
         src/Resistor.cpp
+        include/Capacitor.h
+        src/Capacitor.cpp
+        include/Inductor.h
+        src/Inductor.cpp
 )
 
 target_include_directories(project1 PUBLIC
