@@ -16,6 +16,10 @@ add_executable(project1 main.cpp
         src/Inductor.cpp
         include/Circuit.h
         src/Circuit.cpp
+        include/VoltageSource.h
+        src/VoltageSource.cpp
+        src/CurrentSource.cpp
+        include/CurrentSource.h
 )
 
 target_include_directories(project1 PUBLIC
