@@ -14,6 +14,8 @@ add_executable(project1 main.cpp
         src/Capacitor.cpp
         include/Inductor.h
         src/Inductor.cpp
+        include/Circuit.h
+        src/Circuit.cpp
 )
 
 target_include_directories(project1 PUBLIC
