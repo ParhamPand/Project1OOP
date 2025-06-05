@@ -1,10 +1,12 @@
 #include "Circuit.h"
-#include "Node.h"         //
-#include "Resistor.h"     //
-#include "Capacitor.h"    // Assumes Capacitor.h is created as per previous step
-#include "Inductor.h"     // Assumes Inductor.h is created as per previous step
+#include "Node.h"
+#include "Resistor.h"
+#include "Capacitor.h"
+#include "Inductor.h"
+#include "VoltageSource.h"
+#include "CurrentSource.h"
 #include <iostream>
-#include <algorithm> // For std::find_if if needed, though map lookup is better
+#include <algorithm>
 
 using namespace std;
 
@@ -78,6 +80,24 @@ Inductor* Circuit::addInductor(const std::string& name, const std::string& node1
     allElements.push_back(ind);
     cout << "Inductor '" << name << "' added between " << node1Name << " and " << node2Name << "." << endl;
     return ind;
+}
+
+VoltageSource* Circuit::addVoltageSource(const std::string& name, const std::string& positiveNodeName, const std::string& negativeNodeName, double voltage) {
+    Node* n_pos = getOrCreateNode(positiveNodeName);
+    Node* n_neg = getOrCreateNode(negativeNodeName);
+    VoltageSource* v_src = new VoltageSource(name, n_pos, n_neg, voltage);
+    allElements.push_back(v_src);
+    cout << "VoltageSource '" << name << "' added. Positive: " << positiveNodeName << ", Negative: " << negativeNodeName << "." << endl;
+    return v_src;
+}
+
+CurrentSource* Circuit::addCurrentSource(const std::string& name, const std::string& fromNodeName, const std::string& toNodeName, double current) {
+    Node* n_from = getOrCreateNode(fromNodeName);
+    Node* n_to = getOrCreateNode(toNodeName);
+    CurrentSource* i_src = new CurrentSource(name, n_from, n_to, current);
+    allElements.push_back(i_src);
+    cout << "CurrentSource '" << name << "' added. From: " << fromNodeName << ", To: " << toNodeName << " (through external circuit)." << endl;
+    return i_src;
 }
 
 Node* Circuit::getNode(const std::string& name) const {
