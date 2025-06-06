@@ -43,10 +43,10 @@ Circuit::~Circuit() {
     }
     allElements.clear();
 
-    // Delete all nodes
-    for (auto const& [name, node_ptr] : namedNodes) {
-        delete node_ptr;
-    }
+//    // Delete all nodes
+//    for (auto const& [name, node_ptr] : namedNodes) {
+//        delete node_ptr;
+//    }
     namedNodes.clear();
     cout << "Circuit destroyed." << endl;
 }
