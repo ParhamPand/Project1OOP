@@ -153,8 +153,12 @@ void Circuit::handleCommand(const std::string& input) {
     // Regex for add commands (resistor and capacitor)
     std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([kKmM]eg?)?)");
     std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)(nF|uF|F)?)");
+    std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)(uH|mH|H)?)");
+    std::regex addGNDRegex(R"(add\s+GND\s+(\w+))");
     std::regex deleteResistorRegex(R"(delete\s+R([A-Za-z0-9_]+))");
     std::regex deleteCapacitorRegex(R"(delete\s+C([A-Za-z0-9_]+))");
+    std::regex deleteInductorRegex(R"(delete\s+L([A-Za-z0-9_]+))");
+    std::regex deleteGNDRegex(R"(delete\s+GND\s+(\w+))");
 
     std::smatch match;
 
@@ -284,6 +288,105 @@ void Circuit::handleCommand(const std::string& input) {
     if (std::regex_match(input, std::regex(R"(add\s+([a-z])\w*)"))) {
         cout << "Error: Element " << input.substr(4, input.find(' ', 4) - 4) << " not found in library\n";
         return;
+    }
+    // --- Add Inductor ---
+
+    if (std::regex_match(input, match, addInductorRegex)) {
+
+        string name = "L" + match[1].str();
+        string n1 = match[2].str();
+        string n2 = match[3].str();
+        string valueStr = match[4].str();
+        string unit = match[5].str();
+        double multiplier = 1.0;
+        if (unit == "mH") multiplier = 1e-3;
+        else if (unit == "uH") multiplier = 1e-6;
+        else if (unit == "H") multiplier = 1.0;
+        else if (!unit.empty()) {
+            cout << "Error: Unknown unit for inductance\n";
+            return;
+        }
+
+        double value;
+        try {
+            value = std::stod(valueStr) * multiplier;
+        } catch (...) {
+            cout << "Error: Invalid inductance value\n";
+            return;
+        }
+        if (value <= 0) {
+            cout << "Error: Inductance cannot be zero or negative\n";
+            return;
+        }
+        for (auto* e : allElements) {
+            if (e->getName() == name) {
+                cout << "Error: Inductor " << name << " already exists in the circuit\n";
+                return;
+            }
+        }
+        addInductor(name, n1, n2, value);
+        return;
+    }
+
+    // --- Delete Inductor ---
+    if (std::regex_match(input, match, deleteInductorRegex)) {
+
+        string name = "L" + match[1].str();
+        auto it = std::remove_if(allElements.begin(), allElements.end(), [&](CircuitElement* e) {
+            if (e->getName() == name && e->getElementType() == ElementType::INDUCTOR) {
+                delete e;
+                return true;
+            }
+            return false;
+        });
+
+
+
+        if (it == allElements.end()) {
+            cout << "Error: Cannot delete inductor; component not found\n";
+        } else {
+            allElements.erase(it, allElements.end());
+            cout << "Inductor " << name << " deleted\n";
+        }
+        return;
+    }
+
+    if (regex_match(input, match, addGNDRegex)) {
+        string nodeName = match[1];
+        if (input.substr(4, 3) != "GND") {
+            cerr << "Error: Element " << nodeName << " not found in library" << endl;
+            return;
+        }
+
+
+        Node* node = getNode(nodeName);
+        if (!node) {
+            cerr << "Node does not exist" << endl;
+            return;
+        }
+        groundedNodes.insert(nodeName);
+        cout << "Ground added to node '" << nodeName << "'." << endl;
+        return;
+
+    }
+
+    // Delete GND: delete GND <node>
+    if (regex_match(input, match, deleteGNDRegex)) {
+
+        string nodeName = match[1];
+        if (input.substr(7, 3) != "GND") {
+            cerr << "Error: Element " << nodeName << " not found in library" << endl;
+            return;
+        }
+
+        if (groundedNodes.find(nodeName) == groundedNodes.end()) {
+            cerr << "Node does not exist" << endl;
+            return;
+        }
+        groundedNodes.erase(nodeName);
+        cout << "Ground removed from node '" << nodeName << "'." << endl;
+        return;
+
     }
 
     // --- Generic syntax error ---

@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <stdexcept> // For std::runtime_error
+#include <set>
 
 // Forward declarations
 class Node;
@@ -16,6 +17,7 @@ class CurrentSource; // <-- اضافه شده
 
 class Circuit {
 private:
+    std::set<std::string> groundedNodes;
     std::map<std::string, Node*> namedNodes;
     std::vector<CircuitElement*> allElements;
     int nextNodeId;
