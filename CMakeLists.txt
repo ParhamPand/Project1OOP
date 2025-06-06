@@ -20,6 +20,8 @@ add_executable(project1 main.cpp
         src/VoltageSource.cpp
         src/CurrentSource.cpp
         include/CurrentSource.h
+        include/IdealDiode.h
+        src/IdealDiode.cpp
 )
 
 target_include_directories(project1 PUBLIC
