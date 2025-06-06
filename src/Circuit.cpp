@@ -7,26 +7,33 @@
 #include "CurrentSource.h"
 #include <iostream>
 #include <regex>
+#include <stdexcept>
 #include <algorithm>
 
-using namespace std;
-double parseResistanceValue(const std::string& str) {
-    try {
-        size_t idx = 0;
-        double base = std::stod(str, &idx);
-        std::string suffix = str.substr(idx);
+using namespace std;double parseValueWithSuffix(const std::string& raw) {
+    static const std::regex pattern(R"(^([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)([kKmMuUnN]?(?:[eE][gG])?)$)");
+    std::smatch match;
 
-        if (suffix == "k" || suffix == "K")
-            return base * 1e3;
-        if (suffix == "M" || suffix == "Meg" || suffix == "meg")
-            return base * 1e6;
-        if (suffix.empty())
-            return base;
-
-        throw std::invalid_argument("Invalid suffix");
-    } catch (...) {
+    if (!std::regex_match(raw, match, pattern)) {
         throw std::invalid_argument("Error: Syntax error");
     }
+
+    double baseValue = std::stod(match[1].str());
+    std::string suffix = match[2].str();
+
+    // Convert suffix to lowercase for uniformity
+    std::transform(suffix.begin(), suffix.end(), suffix.begin(), ::tolower);
+
+    double multiplier = 1.0;
+    if (suffix == "k") multiplier = 1e3;
+    else if (suffix == "m") multiplier = 1e-3;
+    else if (suffix == "u") multiplier = 1e-6;
+    else if (suffix == "n") multiplier = 1e-9;
+    else if (suffix == "meg") multiplier = 1e6;
+    else if (suffix.empty()) multiplier = 1.0;
+    else throw std::invalid_argument("Error: Invalid suffix");
+
+    return baseValue * multiplier;
 }
 
 Circuit::Circuit() : nextNodeId(0) {
@@ -146,54 +153,49 @@ void Circuit::printCircuitDetails() const {
 }
 void Circuit::handleCommand(const std::string& input) {
     // Regex for add commands (resistor and capacitor)
-    std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([kKmM]eg?)?)");
-    std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)(nF|uF|F)?)");
-    std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)(uH|mH|H)?)");
-    std::regex addGNDRegex(R"(add\s+GND\s+(\w+))");
+    std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)([kKmM]|[Mm]eg)?)");
+
+    std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
     std::regex deleteResistorRegex(R"(delete\s+R([A-Za-z0-9_]+))");
     std::regex deleteCapacitorRegex(R"(delete\s+C([A-Za-z0-9_]+))");
+    std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([mun]?)$)");
     std::regex deleteInductorRegex(R"(delete\s+L([A-Za-z0-9_]+))");
-    std::regex deleteGNDRegex(R"(delete\s+GND\s+(\w+))");
 
     std::smatch match;
 
+    // --- Add Resistor ---
     // --- Add Resistor ---
     if (std::regex_match(input, match, addResistorRegex)) {
         string name = "R" + match[1].str();
         string n1 = match[2].str();
         string n2 = match[3].str();
         string valueStr = match[4].str();
-        string suffix = match[5].str();
 
-        // Parse resistor value with suffix
-        double multiplier = 1.0;
-        if (suffix == "k" || suffix == "K") multiplier = 1e3;
-        else if (suffix == "M" || suffix == "Meg" || suffix == "meg") multiplier = 1e6;
-
-        double value;
+        double resistance;
         try {
-            value = std::stod(valueStr) * multiplier;
-        } catch (...) {
-            cout << "Error: Invalid resistance value\n";
+            resistance = parseValueWithSuffix(valueStr);  // Use helper for parsing
+        } catch (const std::invalid_argument& e) {
+            cout << e.what() << endl;
             return;
         }
 
-        if (value <= 0) {
-            cout << "Error: Resistance cannot be zero or negative\n";
+        if (resistance <= 0) {
+            cout << "Error: Resistance cannot be zero or negative" << endl;
             return;
         }
 
-        // Check if resistor already exists
-        for (auto* e : allElements) {
-            if (e->getName() == name) {
-                cout << "Error: Resistor " << name << " already exists in the circuit\n";
+        // Check for duplicate resistor
+        for (auto* elem : allElements) {
+            if (elem->getName() == name) {
+                cout << "Error: Resistor " << match[1].str() << " already exists in the circuit" << endl;
                 return;
             }
         }
 
-        addResistor(name, n1, n2, value);
+        addResistor(name, n1, n2, resistance);
         return;
     }
+
 
     // --- Delete Resistor ---
     if (std::regex_match(input, match, deleteResistorRegex)) {
@@ -215,46 +217,37 @@ void Circuit::handleCommand(const std::string& input) {
         }
         return;
     }
-
-    // --- Add Capacitor ---
+    //add capacitor
     if (std::regex_match(input, match, addCapacitorRegex)) {
-        string name = "C" + match[1].str();
-        string n1 = match[2].str();
-        string n2 = match[3].str();
-        string valueStr = match[4].str();
-        string unit = match[5].str();
+        std::string name = "C" + match[1].str();
+        std::string n1 = match[2].str();
+        std::string n2 = match[3].str();
+        std::string valueStr = match[4].str();
 
-        double multiplier = 1.0;
-        if (unit == "nF") multiplier = 1e-9;
-        else if (unit == "uF") multiplier = 1e-6;
-        else if (unit == "F") multiplier = 1.0;
-        else if (!unit.empty()) {
-            cout << "Error: Unknown unit for capacitance\n";
-            return;
-        }
-
-        double value;
-        try {
-            value = std::stod(valueStr) * multiplier;
-        } catch (...) {
-            cout << "Error: Invalid capacitance value\n";
-            return;
-        }
-
-        if (value <= 0) {
-            cout << "Error: Capacitance cannot be zero or negative\n";
-            return;
-        }
-
-        // Check for duplicate
-        for (auto* e : allElements) {
-            if (e->getName() == name) {
-                cout << "Error: Capacitor " << name << " already exists in the circuit\n";
+        // Check if capacitor already exists by scanning allElements
+        for (auto* elem : allElements) {
+            if (elem->getName() == name) {
+                std::cout << "Error: Capacitor " << match[1].str() << " already exists in the circuit\n";
                 return;
             }
         }
 
-        addCapacitor(name, n1, n2, value);
+        double capacitance = 0.0;
+        try {
+            capacitance = parseValueWithSuffix(valueStr);
+        } catch (const std::invalid_argument& e) {
+            std::cout << e.what() << "\n";
+            return;
+        }
+
+        if (capacitance <= 0) {
+            std::cout << "Error: Capacitance cannot be zero or negative\n";
+            return;
+        }
+
+        addCapacitor(name, n1, n2, capacitance);
+
+        std::cout << "Capacitor '" << name << "' added between " << n1 << " and " << n2 << " with value " << capacitance << " F.\n";
         return;
     }
 
@@ -284,49 +277,45 @@ void Circuit::handleCommand(const std::string& input) {
         cout << "Error: Element " << input.substr(4, input.find(' ', 4) - 4) << " not found in library\n";
         return;
     }
+
     // --- Add Inductor ---
-
     if (std::regex_match(input, match, addInductorRegex)) {
+        std::string name = "L" + match[1].str();
+        std::string n1 = match[2].str();
+        std::string n2 = match[3].str();
+        std::string rawValue = match[4].str() + match[5].str();  // number + unit suffix together
 
-        string name = "L" + match[1].str();
-        string n1 = match[2].str();
-        string n2 = match[3].str();
-        string valueStr = match[4].str();
-        string unit = match[5].str();
-        double multiplier = 1.0;
-        if (unit == "mH") multiplier = 1e-3;
-        else if (unit == "uH") multiplier = 1e-6;
-        else if (unit == "H") multiplier = 1.0;
-        else if (!unit.empty()) {
-            cout << "Error: Unknown unit for inductance\n";
-            return;
-        }
-
-        double value;
-        try {
-            value = std::stod(valueStr) * multiplier;
-        } catch (...) {
-            cout << "Error: Invalid inductance value\n";
-            return;
-        }
-        if (value <= 0) {
-            cout << "Error: Inductance cannot be zero or negative\n";
-            return;
-        }
+        // Check if inductor already exists
         for (auto* e : allElements) {
             if (e->getName() == name) {
-                cout << "Error: Inductor " << name << " already exists in the circuit\n";
+                std::cout << "Error: Inductor " << name << " already exists in the circuit\n";
                 return;
             }
         }
-        addInductor(name, n1, n2, value);
+
+        double inductance = 0.0;
+        try {
+            inductance = parseValueWithSuffix(rawValue);
+        } catch (const std::invalid_argument& e) {
+            std::cout << e.what() << "\n";
+            return;
+        }
+
+        if (inductance <= 0) {
+            std::cout << "Error: Inductance cannot be zero or negative\n";
+            return;
+        }
+
+        addInductor(name, n1, n2, inductance);
+        std::cout << "Inductor '" << name << "' added between " << n1 << " and " << n2 << " with value " << inductance << " H.\n";
         return;
     }
 
+
     // --- Delete Inductor ---
     if (std::regex_match(input, match, deleteInductorRegex)) {
-
         string name = "L" + match[1].str();
+
         auto it = std::remove_if(allElements.begin(), allElements.end(), [&](CircuitElement* e) {
             if (e->getName() == name && e->getElementType() == ElementType::INDUCTOR) {
                 delete e;
@@ -334,8 +323,6 @@ void Circuit::handleCommand(const std::string& input) {
             }
             return false;
         });
-
-
 
         if (it == allElements.end()) {
             cout << "Error: Cannot delete inductor; component not found\n";
@@ -345,30 +332,28 @@ void Circuit::handleCommand(const std::string& input) {
         }
         return;
     }
-
-    if (regex_match(input, match, addGNDRegex)) {
+    if (regex_match(input, match, regex(R"(add\s+GND\s+(\w+))"))) {
         string nodeName = match[1];
+
         if (input.substr(4, 3) != "GND") {
             cerr << "Error: Element " << nodeName << " not found in library" << endl;
             return;
         }
-
 
         Node* node = getNode(nodeName);
         if (!node) {
             cerr << "Node does not exist" << endl;
             return;
         }
+
         groundedNodes.insert(nodeName);
         cout << "Ground added to node '" << nodeName << "'." << endl;
         return;
-
     }
-
     // Delete GND: delete GND <node>
-    if (regex_match(input, match, deleteGNDRegex)) {
-
+    if (regex_match(input, match, regex(R"(delete\s+GND\s+(\w+))"))) {
         string nodeName = match[1];
+
         if (input.substr(7, 3) != "GND") {
             cerr << "Error: Element " << nodeName << " not found in library" << endl;
             return;
@@ -378,16 +363,16 @@ void Circuit::handleCommand(const std::string& input) {
             cerr << "Node does not exist" << endl;
             return;
         }
+
         groundedNodes.erase(nodeName);
         cout << "Ground removed from node '" << nodeName << "'." << endl;
         return;
-
     }
-
     // --- Generic syntax error ---
     cout << "Error: Syntax error\n";
-}
 
+
+}
 void Circuit::analyzeCircuit() {
     // Placeholder for actual circuit analysis (e.g., MNA setup and solution)
     cout << "\n--- Circuit Analysis ---" << endl;
