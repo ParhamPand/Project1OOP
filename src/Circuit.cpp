@@ -6,9 +6,28 @@
 #include "VoltageSource.h"
 #include "CurrentSource.h"
 #include <iostream>
+#include <regex>
 #include <algorithm>
 
 using namespace std;
+double parseResistanceValue(const std::string& str) {
+    try {
+        size_t idx = 0;
+        double base = std::stod(str, &idx);
+        std::string suffix = str.substr(idx);
+
+        if (suffix == "k" || suffix == "K")
+            return base * 1e3;
+        if (suffix == "M" || suffix == "Meg" || suffix == "meg")
+            return base * 1e6;
+        if (suffix.empty())
+            return base;
+
+        throw std::invalid_argument("Invalid suffix");
+    } catch (...) {
+        throw std::invalid_argument("Error: Syntax error");
+    }
+}
 
 Circuit::Circuit() : nextNodeId(0) {
     cout << "Circuit created." << endl;
@@ -130,6 +149,146 @@ void Circuit::printCircuitDetails() const {
     }
     cout << "--- End of Circuit Details ---" << endl;
 }
+void Circuit::handleCommand(const std::string& input) {
+    // Regex for add commands (resistor and capacitor)
+    std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([kKmM]eg?)?)");
+    std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)(nF|uF|F)?)");
+    std::regex deleteResistorRegex(R"(delete\s+R([A-Za-z0-9_]+))");
+    std::regex deleteCapacitorRegex(R"(delete\s+C([A-Za-z0-9_]+))");
+
+    std::smatch match;
+
+    // --- Add Resistor ---
+    if (std::regex_match(input, match, addResistorRegex)) {
+        string name = "R" + match[1].str();
+        string n1 = match[2].str();
+        string n2 = match[3].str();
+        string valueStr = match[4].str();
+        string suffix = match[5].str();
+
+        // Parse resistor value with suffix
+        double multiplier = 1.0;
+        if (suffix == "k" || suffix == "K") multiplier = 1e3;
+        else if (suffix == "M" || suffix == "Meg" || suffix == "meg") multiplier = 1e6;
+
+        double value;
+        try {
+            value = std::stod(valueStr) * multiplier;
+        } catch (...) {
+            cout << "Error: Invalid resistance value\n";
+            return;
+        }
+
+        if (value <= 0) {
+            cout << "Error: Resistance cannot be zero or negative\n";
+            return;
+        }
+
+        // Check if resistor already exists
+        for (auto* e : allElements) {
+            if (e->getName() == name) {
+                cout << "Error: Resistor " << name << " already exists in the circuit\n";
+                return;
+            }
+        }
+
+        addResistor(name, n1, n2, value);
+        return;
+    }
+
+    // --- Delete Resistor ---
+    if (std::regex_match(input, match, deleteResistorRegex)) {
+        string name = "R" + match[1].str();
+
+        auto it = std::remove_if(allElements.begin(), allElements.end(), [&](CircuitElement* e) {
+            if (e->getName() == name && e->getElementType() == ElementType::RESISTOR) {
+                delete e;
+                return true;
+            }
+            return false;
+        });
+
+        if (it == allElements.end()) {
+            cout << "Error: Cannot delete resistor; component not found\n";
+        } else {
+            allElements.erase(it, allElements.end());
+            cout << "Resistor " << name << " deleted\n";
+        }
+        return;
+    }
+
+    // --- Add Capacitor ---
+    if (std::regex_match(input, match, addCapacitorRegex)) {
+        string name = "C" + match[1].str();
+        string n1 = match[2].str();
+        string n2 = match[3].str();
+        string valueStr = match[4].str();
+        string unit = match[5].str();
+
+        double multiplier = 1.0;
+        if (unit == "nF") multiplier = 1e-9;
+        else if (unit == "uF") multiplier = 1e-6;
+        else if (unit == "F") multiplier = 1.0;
+        else if (!unit.empty()) {
+            cout << "Error: Unknown unit for capacitance\n";
+            return;
+        }
+
+        double value;
+        try {
+            value = std::stod(valueStr) * multiplier;
+        } catch (...) {
+            cout << "Error: Invalid capacitance value\n";
+            return;
+        }
+
+        if (value <= 0) {
+            cout << "Error: Capacitance cannot be zero or negative\n";
+            return;
+        }
+
+        // Check for duplicate
+        for (auto* e : allElements) {
+            if (e->getName() == name) {
+                cout << "Error: Capacitor " << name << " already exists in the circuit\n";
+                return;
+            }
+        }
+
+        addCapacitor(name, n1, n2, value);
+        return;
+    }
+
+    // --- Delete Capacitor ---
+    if (std::regex_match(input, match, deleteCapacitorRegex)) {
+        string name = "C" + match[1].str();
+
+        auto it = std::remove_if(allElements.begin(), allElements.end(), [&](CircuitElement* e) {
+            if (e->getName() == name && e->getElementType() == ElementType::CAPACITOR) {
+                delete e;
+                return true;
+            }
+            return false;
+        });
+
+        if (it == allElements.end()) {
+            cout << "Error: Cannot delete capacitor; component not found\n";
+        } else {
+            allElements.erase(it, allElements.end());
+            cout << "Capacitor " << name << " deleted\n";
+        }
+        return;
+    }
+
+    // --- Error: wrong element library (e.g. lowercase r, c, etc.) ---
+    if (std::regex_match(input, std::regex(R"(add\s+([a-z])\w*)"))) {
+        cout << "Error: Element " << input.substr(4, input.find(' ', 4) - 4) << " not found in library\n";
+        return;
+    }
+
+    // --- Generic syntax error ---
+    cout << "Error: Syntax error\n";
+}
 
 void Circuit::analyzeCircuit() {
     // Placeholder for actual circuit analysis (e.g., MNA setup and solution)
@@ -142,16 +301,6 @@ void Circuit::analyzeCircuit() {
     cout << "Preparing for analysis..." << endl;
     cout << "Number of nodes (excluding potential ground if implicit): " << namedNodes.size() << endl;
     cout << "Number of elements: " << allElements.size() << endl;
-
-    // Here you would:
-    // 1. Determine the size of the MNA matrix (number of nodes - 1 + number of voltage-defined elements)
-    // 2. Create the matrix and RHS vector
-    // 3. Iterate through all elements and apply their stamps
-    //    for (const auto* elem : allElements) {
-    //        elem->applyStamps(/* matrix, rhs */);
-    //    }
-    // 4. Solve the system of equations
-    // 5. Store/display results (node voltages, branch currents)
 
     cout << "Applying stamps for all elements (placeholder):" << endl;
     for (const auto* elem : allElements) {

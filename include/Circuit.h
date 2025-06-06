@@ -38,6 +38,7 @@ public:
     Node* getNode(const std::string& name) const;
     const std::vector<CircuitElement*>& getElements() const;
     const std::map<std::string, Node*>& getNodes() const;
+    void handleCommand(const std::string& input);
 
     void printCircuitDetails() const;
     void analyzeCircuit();
