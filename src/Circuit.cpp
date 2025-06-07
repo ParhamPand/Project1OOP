@@ -154,16 +154,16 @@ void Circuit::printCircuitDetails() const {
 void Circuit::handleCommand(const std::string& input) {
     // Regex for add commands (resistor and capacitor)
     std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)([kKmM]|[Mm]eg)?)");
-
     std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
+    std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([mun]?)$)");
+    std::regex addDiodeRegex(R"(add\s+(D\w+)\s+(\w+)\s+(\w+)\s+(\w+))");
     std::regex deleteResistorRegex(R"(delete\s+R([A-Za-z0-9_]+))");
     std::regex deleteCapacitorRegex(R"(delete\s+C([A-Za-z0-9_]+))");
-    std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([mun]?)$)");
     std::regex deleteInductorRegex(R"(delete\s+L([A-Za-z0-9_]+))");
+    std::regex deleteDiodeRegex(R"(delete\s+(D\w+))");
 
     std::smatch match;
 
-    // --- Add Resistor ---
     // --- Add Resistor ---
     if (std::regex_match(input, match, addResistorRegex)) {
         string name = "R" + match[1].str();
