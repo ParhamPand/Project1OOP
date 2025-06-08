@@ -13,6 +13,7 @@ class Resistor;
 class Capacitor;
 class Inductor;
 class VoltageSource;
+class SinusoidalVoltageSource;
 class CurrentSource;
 class Diode;
 class ZenerDiode;
@@ -36,6 +37,7 @@ public:
     Capacitor* addCapacitor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double capacitance);
     Inductor* addInductor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double inductance);
     VoltageSource* addVoltageSource(const std::string& name, const std::string& positiveNodeName, const std::string& negativeNodeName, double voltage);
+    SinusoidalVoltageSource* addSinusoidalVoltageSource(const std::string& name, const std::string& node1Name, const std::string& node2Name, double offset, double amplitude, double frequency);
     CurrentSource* addCurrentSource(const std::string& name, const std::string& fromNodeName, const std::string& toNodeName, double current);
     Diode* addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName);
     ZenerDiode* addZenerDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName);
@@ -48,6 +50,7 @@ public:
 
     void printCircuitDetails() const;
     void analyzeCircuit();
+    void printNodes() const;
 
     Circuit(const Circuit&) = delete;
     Circuit& operator=(const Circuit&) = delete;

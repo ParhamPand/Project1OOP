@@ -7,6 +7,7 @@
 #include "CurrentSource.h"
 #include "IdealDiode.h"
 #include "ZenerDiode.h"
+#include "SinusoidalVoltageSource.h"
 #include <iostream>
 #include <regex>
 #include <stdexcept>
@@ -81,9 +82,9 @@ Node* Circuit::addNode(const std::string& name) {
 Resistor* Circuit::addResistor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double resistance) {
     Node* n1 = getOrCreateNode(node1Name);
     Node* n2 = getOrCreateNode(node2Name);
-    Resistor* res = new Resistor(name, n1, n2, resistance); //
+    Resistor* res = new Resistor(name, n1, n2, resistance);
     allElements.push_back(res);
-    cout << "Resistor '" << name << "' added between " << node1Name << " and " << node2Name << "." << endl;
+    cout << "Resistor '" << name << "' with resistance " << resistance << " Ohms added between " << node1Name << " and " << node2Name << "." << endl;
     return res;
 }
 
@@ -110,7 +111,7 @@ VoltageSource* Circuit::addVoltageSource(const std::string& name, const std::str
     Node* n_neg = getOrCreateNode(negativeNodeName);
     VoltageSource* v_src = new VoltageSource(name, n_pos, n_neg, voltage);
     allElements.push_back(v_src);
-    cout << "VoltageSource '" << name << "' added. Positive: " << positiveNodeName << ", Negative: " << negativeNodeName << "." << endl;
+    cout << "VoltageSource '" << name << "' with value " << voltage << "V added. Positive: " << positiveNodeName << ", Negative: " << negativeNodeName << "." << endl;
     return v_src;
 }
 
@@ -119,7 +120,7 @@ CurrentSource* Circuit::addCurrentSource(const std::string& name, const std::str
     Node* n_to = getOrCreateNode(toNodeName);
     CurrentSource* i_src = new CurrentSource(name, n_from, n_to, current);
     allElements.push_back(i_src);
-    cout << "CurrentSource '" << name << "' added. From: " << fromNodeName << ", To: " << toNodeName << " (through external circuit)." << endl;
+    cout << "CurrentSource '" << name << "' with value " << current << "A added. From: " << fromNodeName << ", To: " << toNodeName << " (through external circuit)." << endl;
     return i_src;
 }
 
@@ -137,6 +138,15 @@ ZenerDiode* Circuit::addZenerDiode(const std::string& name, const std::string& a
     ZenerDiode* zener = new ZenerDiode(name, n_anode, n_cathode);
     allElements.push_back(zener);
     return zener;
+}
+
+SinusoidalVoltageSource* Circuit::addSinusoidalVoltageSource(const std::string& name, const std::string& node1Name, const std::string& node2Name, double offset, double amplitude, double frequency) {
+    Node* n1 = getOrCreateNode(node1Name);
+    Node* n2 = getOrCreateNode(node2Name);
+    auto* src = new SinusoidalVoltageSource(name, n1, n2, offset, amplitude, frequency);
+    allElements.push_back(src);
+    cout << "SinusoidalVoltageSource '" << name << "' added." << endl;
+    return src;
 }
 
 
@@ -171,18 +181,47 @@ void Circuit::printCircuitDetails() const {
     }
     cout << "--- End of Circuit Details ---" << endl;
 }
+
+void Circuit::printNodes() const {
+    if (namedNodes.empty()) {
+        cout << "There are no nodes in the circuit." << endl;
+        return;
+    }
+
+    cout << "Available nodes:" << endl;
+
+    auto it = namedNodes.cbegin();
+    cout << it->first;
+    ++it;
+    for (; it != namedNodes.cend(); ++it) {
+        cout << ", " << it->first;
+    }
+    cout << endl;
+}
+
+
 void Circuit::handleCommand(const std::string& input) {
-    // Regex for add commands (resistor and capacitor)
-    std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)([kKmM]|[Mm]eg)?)");
+    // Regex for list commands
+    std::regex nodesRegex(R"(\s*\.nodes\s*)");
+    // Regex for add commands
+    std::regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
     std::regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
     std::regex addInductorRegex(R"(add\s+L([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([0-9.eE+-]+)([mun]?)$)");
     std::regex addDiodeRegex(R"(add\s+(D\w+)\s+(\w+)\s+(\w+)\s+(\w+))");
+    std::regex addVoltageSourceRegex(R"(add\s+VoltageSource([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+(.+)$)");
+    std::regex addSinSourceRegex(R"(add\s+V([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+SIN\s*\(\s*([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?)\s*\))");
+    std::regex addCurrentSourceRegex(R"(add\s+CurrentSource([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+(.+)$)");
     std::regex deleteResistorRegex(R"(delete\s+R([A-Za-z0-9_]+))");
     std::regex deleteCapacitorRegex(R"(delete\s+C([A-Za-z0-9_]+))");
     std::regex deleteInductorRegex(R"(delete\s+L([A-Za-z0-9_]+))");
     std::regex deleteDiodeRegex(R"(delete\s+(D\w+))");
 
     std::smatch match;
+    // show Nodes
+    if (std::regex_match(input, nodesRegex)) {
+        printNodes();
+        return;
+    }
 
     // --- Add Resistor ---
     if (std::regex_match(input, match, addResistorRegex)) {
@@ -193,7 +232,8 @@ void Circuit::handleCommand(const std::string& input) {
 
         double resistance;
         try {
-            resistance = parseValueWithSuffix(valueStr);  // Use helper for parsing
+
+            resistance = parseValueWithSuffix(valueStr);
         } catch (const std::invalid_argument& e) {
             cout << e.what() << endl;
             return;
@@ -235,6 +275,29 @@ void Circuit::handleCommand(const std::string& input) {
             allElements.erase(it, allElements.end());
             cout << "Resistor " << name << " deleted\n";
         }
+        return;
+    }
+    if (std::regex_match(input, match, addCurrentSourceRegex)) {
+        string name = "CurrentSource" + match[1].str();
+        string n_from = match[2].str();
+        string n_to = match[3].str();
+        string valueStr = match[4].str();
+
+        for (auto* elem : allElements) {
+            if (elem->getName() == name) {
+                cout << "Error: Component " << name << " already exists in the circuit" << endl;
+                return;
+            }
+        }
+
+        double current;
+        try {
+            current = parseValueWithSuffix(valueStr);
+        } catch (const std::invalid_argument& e) {
+            cout << e.what() << endl;
+            return;
+        }
+        addCurrentSource(name, n_from, n_to, current);
         return;
     }
     //add capacitor
@@ -434,6 +497,58 @@ void Circuit::handleCommand(const std::string& input) {
         }
         return;
     }
+
+    if (std::regex_match(input, match, addVoltageSourceRegex)) {
+        string name = "VoltageSource" + match[1].str();
+        string n_pos = match[2].str();
+        string n_neg = match[3].str();
+        string valueStr = match[4].str();
+
+
+        for (auto* elem : allElements) {
+            if (elem->getName() == name) {
+                cout << "Error: Component " << name << " already exists in the circuit" << endl;
+                return;
+            }
+        }
+
+        double voltage;
+        try {
+            voltage = parseValueWithSuffix(valueStr);
+        } catch (const std::invalid_argument& e) {
+            cout << e.what() << endl;
+            return;
+        }
+
+        addVoltageSource(name, n_pos, n_neg, voltage);
+        return;
+    }
+
+    if (std::regex_match(input, match, addSinSourceRegex)) {
+        string name = "V" + match[1].str();
+        string n_pos = match[2].str();
+        string n_neg = match[3].str();
+
+        try {
+            double offset = std::stod(match[4].str());
+            double amplitude = std::stod(match[5].str());
+            double frequency = std::stod(match[6].str());
+
+            for (auto* elem : allElements) {
+                if (elem->getName() == name) {
+                    cout << "Error: Component " << name << " already exists in the circuit" << endl;
+                    return;
+                }
+            }
+
+            addSinusoidalVoltageSource(name, n_pos, n_neg, offset, amplitude, frequency);
+        } catch (const std::invalid_argument& e) {
+            cout << "Error: Invalid number format for sinusoidal source parameters." << endl;
+        }
+        return;
+    }
+
+
     // --- Generic syntax error ---
     cout << "Error: Syntax error\n";
 

@@ -11,6 +11,7 @@ enum class ElementType {
     ZENER_DIODE,
     VOLTAGE_SOURCE,
     CURRENT_SOURCE,
+    SINUSOIDAL_VOLTAGE_SOURCE,
     UNDEFINED
 };
 

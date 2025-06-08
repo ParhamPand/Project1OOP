@@ -39,6 +39,7 @@ string CircuitElement::getElementTypeString() const {
         case ElementType::DIODE: return "Diode";
         case ElementType::VOLTAGE_SOURCE: return "VoltageSource";
         case ElementType::CURRENT_SOURCE: return "CurrentSource";
+        case ElementType::SINUSOIDAL_VOLTAGE_SOURCE: return "SinusoidalVoltageSource";
         default: return "Undefined";
     }
 }

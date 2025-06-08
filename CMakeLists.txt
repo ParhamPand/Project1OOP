@@ -24,6 +24,8 @@ add_executable(project1 main.cpp
         src/IdealDiode.cpp
         include/ZenerDiode.h
         src/ZenerDiode.cpp
+        include/SinusoidalVoltageSource.h
+        src/SinusoidalVoltageSource.cpp
 )
 
 target_include_directories(project1 PUBLIC
