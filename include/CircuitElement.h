@@ -8,6 +8,7 @@ enum class ElementType {
     CAPACITOR,
     INDUCTOR,
     DIODE,
+    ZENER_DIODE,
     VOLTAGE_SOURCE,
     CURRENT_SOURCE,
     UNDEFINED

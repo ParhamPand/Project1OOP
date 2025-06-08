@@ -6,6 +6,7 @@
 #include "VoltageSource.h"
 #include "CurrentSource.h"
 #include "IdealDiode.h"
+#include "ZenerDiode.h"
 #include <iostream>
 #include <regex>
 #include <stdexcept>
@@ -122,13 +123,22 @@ CurrentSource* Circuit::addCurrentSource(const std::string& name, const std::str
     return i_src;
 }
 
-Diode* Circuit::addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName, const std::string& model) {
+Diode* Circuit::addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName) {
     Node* n_anode = getOrCreateNode(anodeName);
     Node* n_cathode = getOrCreateNode(cathodeName);
-    Diode* diode = new Diode(name, n_anode, n_cathode, model);
+    Diode* diode = new Diode(name, n_anode, n_cathode);
     allElements.push_back(diode);
     return diode;
 }
+
+ZenerDiode* Circuit::addZenerDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName) {
+    Node* n_anode = getOrCreateNode(anodeName);
+    Node* n_cathode = getOrCreateNode(cathodeName);
+    ZenerDiode* zener = new ZenerDiode(name, n_anode, n_cathode);
+    allElements.push_back(zener);
+    return zener;
+}
+
 
 
 Node* Circuit::getNode(const std::string& name) const {
@@ -382,22 +392,25 @@ void Circuit::handleCommand(const std::string& input) {
 
     // --- Add Diode ---
     if (std::regex_match(input, match, addDiodeRegex)) {
-        string name =  match[1].str();
+        string name = match[1].str();
         string anode = match[2].str();
         string cathode = match[3].str();
         string model = match[4].str();
 
-        // Check for duplicate diode
         for (auto* elem : allElements) {
             if (elem->getName() == name) {
                 cout << "Error: Diode " << name << " already exists in the circuit" << endl;
                 return;
             }
         }
-        if (model =="D" || model == "Z")
-            addDiode(name, anode, cathode , model);
-        else
+
+        if (model == "D") {
+            addDiode(name, anode, cathode);
+        } else if (model == "Z") {
+            addZenerDiode(name, anode, cathode);
+        } else {
             cout << "Error: Model " << model << " not found in library" << endl;
+        }
         return;
     }
 

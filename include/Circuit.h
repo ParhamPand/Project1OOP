@@ -15,6 +15,7 @@ class Inductor;
 class VoltageSource;
 class CurrentSource;
 class Diode;
+class ZenerDiode;
 
 class Circuit {
 private:
@@ -36,7 +37,8 @@ public:
     Inductor* addInductor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double inductance);
     VoltageSource* addVoltageSource(const std::string& name, const std::string& positiveNodeName, const std::string& negativeNodeName, double voltage);
     CurrentSource* addCurrentSource(const std::string& name, const std::string& fromNodeName, const std::string& toNodeName, double current);
-    Diode* addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName, const std::string& model);
+    Diode* addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName);
+    ZenerDiode* addZenerDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName);
 
 
     Node* getNode(const std::string& name) const;

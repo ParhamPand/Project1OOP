@@ -22,6 +22,8 @@ add_executable(project1 main.cpp
         include/CurrentSource.h
         include/IdealDiode.h
         src/IdealDiode.cpp
+        include/ZenerDiode.h
+        src/ZenerDiode.cpp
 )
 
 target_include_directories(project1 PUBLIC
