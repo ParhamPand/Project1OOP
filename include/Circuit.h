@@ -12,8 +12,9 @@ class CircuitElement;
 class Resistor;
 class Capacitor;
 class Inductor;
-class VoltageSource; // <-- اضافه شده
-class CurrentSource; // <-- اضافه شده
+class VoltageSource;
+class CurrentSource;
+class Diode;
 
 class Circuit {
 private:
@@ -33,8 +34,9 @@ public:
     Resistor* addResistor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double resistance);
     Capacitor* addCapacitor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double capacitance);
     Inductor* addInductor(const std::string& name, const std::string& node1Name, const std::string& node2Name, double inductance);
-    VoltageSource* addVoltageSource(const std::string& name, const std::string& positiveNodeName, const std::string& negativeNodeName, double voltage); // <-- اضافه شده
-    CurrentSource* addCurrentSource(const std::string& name, const std::string& fromNodeName, const std::string& toNodeName, double current);       // <-- اضافه شده
+    VoltageSource* addVoltageSource(const std::string& name, const std::string& positiveNodeName, const std::string& negativeNodeName, double voltage);
+    CurrentSource* addCurrentSource(const std::string& name, const std::string& fromNodeName, const std::string& toNodeName, double current);
+    Diode* addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName, const std::string& model);
 
 
     Node* getNode(const std::string& name) const;

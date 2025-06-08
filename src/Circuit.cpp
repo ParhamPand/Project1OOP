@@ -5,6 +5,7 @@
 #include "Inductor.h"
 #include "VoltageSource.h"
 #include "CurrentSource.h"
+#include "IdealDiode.h"
 #include <iostream>
 #include <regex>
 #include <stdexcept>
@@ -120,6 +121,15 @@ CurrentSource* Circuit::addCurrentSource(const std::string& name, const std::str
     cout << "CurrentSource '" << name << "' added. From: " << fromNodeName << ", To: " << toNodeName << " (through external circuit)." << endl;
     return i_src;
 }
+
+Diode* Circuit::addDiode(const std::string& name, const std::string& anodeName, const std::string& cathodeName, const std::string& model) {
+    Node* n_anode = getOrCreateNode(anodeName);
+    Node* n_cathode = getOrCreateNode(cathodeName);
+    Diode* diode = new Diode(name, n_anode, n_cathode, model);
+    allElements.push_back(diode);
+    return diode;
+}
+
 
 Node* Circuit::getNode(const std::string& name) const {
     auto it = namedNodes.find(name);
@@ -332,6 +342,7 @@ void Circuit::handleCommand(const std::string& input) {
         }
         return;
     }
+    // --- Add GND Node ---
     if (regex_match(input, match, regex(R"(add\s+GND\s+(\w+))"))) {
         string nodeName = match[1];
 
@@ -350,7 +361,7 @@ void Circuit::handleCommand(const std::string& input) {
         cout << "Ground added to node '" << nodeName << "'." << endl;
         return;
     }
-    // Delete GND: delete GND <node>
+    // // --- delete GND Node ---
     if (regex_match(input, match, regex(R"(delete\s+GND\s+(\w+))"))) {
         string nodeName = match[1];
 
@@ -366,6 +377,48 @@ void Circuit::handleCommand(const std::string& input) {
 
         groundedNodes.erase(nodeName);
         cout << "Ground removed from node '" << nodeName << "'." << endl;
+        return;
+    }
+
+    // --- Add Diode ---
+    if (std::regex_match(input, match, addDiodeRegex)) {
+        string name =  match[1].str();
+        string anode = match[2].str();
+        string cathode = match[3].str();
+        string model = match[4].str();
+
+        // Check for duplicate diode
+        for (auto* elem : allElements) {
+            if (elem->getName() == name) {
+                cout << "Error: Diode " << name << " already exists in the circuit" << endl;
+                return;
+            }
+        }
+        if (model =="D" || model == "Z")
+            addDiode(name, anode, cathode , model);
+        else
+            cout << "Error: Model " << model << " not found in library" << endl;
+        return;
+    }
+
+    // --- Delete Diode ---
+    if (std::regex_match(input, match, deleteDiodeRegex)) {
+        string name = match[1].str();
+
+        auto it = std::remove_if(allElements.begin(), allElements.end(), [&](CircuitElement* e) {
+            if (e->getName() == name && e->getElementType() == ElementType::DIODE) {
+                delete e;
+                return true;
+            }
+            return false;
+        });
+
+        if (it == allElements.end()) {
+            cout << "Error: Cannot delete diode; component not found\n";
+        } else {
+            allElements.erase(it, allElements.end());
+            cout << "Diode " << name << " deleted\n";
+        }
         return;
     }
     // --- Generic syntax error ---
