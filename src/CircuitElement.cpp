@@ -37,6 +37,7 @@ string CircuitElement::getElementTypeString() const {
         case ElementType::CAPACITOR: return "Capacitor";
         case ElementType::INDUCTOR: return "Inductor";
         case ElementType::DIODE: return "Diode";
+        case ElementType::ZENER_DIODE: return "ZenerDiode";
         case ElementType::VOLTAGE_SOURCE: return "VoltageSource";
         case ElementType::CURRENT_SOURCE: return "CurrentSource";
         case ElementType::SINUSOIDAL_VOLTAGE_SOURCE: return "SinusoidalVoltageSource";

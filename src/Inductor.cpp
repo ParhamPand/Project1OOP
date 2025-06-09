@@ -1,41 +1,43 @@
 #include "Inductor.h"
-#include <iostream> // For cerr, cout, endl
-#include <string>   // For string
+#include <iostream>
+#include <vector>
+#include <map>
 
-// Using directives for std namespace
-using namespace std;
-
-Inductor::Inductor(const string& name, Node* n1, Node* n2, double inductanceValue)
+// سازنده و مخرب بدون تغییر
+Inductor::Inductor(const std::string& name, Node* n1, Node* n2, double inductanceValue)
         : CircuitElement(name, n1, n2, inductanceValue, ElementType::INDUCTOR) {
     if (inductanceValue <= 0) {
-        cerr << "Warning: Inductor '" << getName()
-             << "' created with non-positive value: " << inductanceValue << " Henrys." << endl;
+        std::cerr << "Warning: Inductor '" << getName()
+                  << "' created with non-positive value: " << inductanceValue << " Henrys." << std::endl;
     }
 }
 
-Inductor::~Inductor() {
-    // Destructor - currently no specific resources to release for Inductor itself
-}
+Inductor::~Inductor() {}
 
-void Inductor::applyStamps(/* CircuitMatrix& matrix */) const {
-    // Placeholder for MNA stamping logic for an inductor
-    // This will be different from a resistor.
-    cout << "Applying stamps for Inductor: " << getName()
-         << " Value: " << getValue() << " Henrys.";
-    if (getNode1() && getNode2()) {
-        cout << " Connected between Node " << getNode1()->getId()
-             << " (" << getNode1()->getName() << ")"
-             << " and Node " << getNode2()->getId()
-             << " (" << getNode2()->getName() << ").";
-    }
-    cout << endl;
-    // Example for DC analysis (short circuit):
-    // An ideal inductor is a short circuit in DC steady state.
-    // This means it acts like a wire with zero resistance.
-    // However, in MNA, it introduces a new current variable and a voltage constraint equation.
-    // If it's an ideal inductor, and node1 is 'k' and node2 is 'm', and the current through
-    // the inductor is I_L (a new variable), the equations would be:
-    // V_k - V_m = 0 (for DC, or V_k - V_m = L * dI_L/dt for transient)
-    // The KCL equations at node k and m would include I_L.
-}
+// پیاده‌سازی تابع با امضای جدید
+void Inductor::applyStamps(std::vector<std::vector<double>>& A,
+                           std::vector<double>& b,
+                           const std::map<std::string, int>& node_map,
+                           const std::vector<double>& x_prev,
+                           int mna_extra_vars_start_index,
+                           double t, double dt) const {
+    if (dt <= 1e-12) return;
 
+    double L = getValue();
+    int n1_idx = (node_map.count(node1->getName())) ? node_map.at(node1->getName()) : -1;
+    int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
+    int branch_idx = mna_extra_vars_start_index + this->mna_branch_index;
+
+    // KCL part (جریان سلف بر KCL گره‌ها تأثیر می‌گذارد)
+    if (n1_idx != -1) A[n1_idx][branch_idx] += 1.0;
+    if (n2_idx != -1) A[n2_idx][branch_idx] -= 1.0;
+
+    // KVL part (معادله جدید برای جریان سلف)
+    // V1 - V2 - (L/dt)*I_L(t) = -(L/dt)*I_L(t-1)
+    if (n1_idx != -1) A[branch_idx][n1_idx] += 1.0;
+    if (n2_idx != -1) A[branch_idx][n2_idx] -= 1.0;
+    A[branch_idx][branch_idx] -= L / dt;
+
+    double i_L_prev = (branch_idx < x_prev.size()) ? x_prev[branch_idx] : 0.0;
+    b[branch_idx] -= (L / dt) * i_L_prev;
+}

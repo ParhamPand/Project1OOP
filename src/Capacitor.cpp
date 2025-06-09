@@ -1,34 +1,54 @@
 #include "Capacitor.h"
 #include <iostream>
-#include <string>
+#include <vector>
+#include <map>
 
-
-using namespace std;
-
-Capacitor::Capacitor(const string& name, Node* n1, Node* n2, double capacitanceValue)
+// سازنده و مخرب بدون تغییر
+Capacitor::Capacitor(const std::string& name, Node* n1, Node* n2, double capacitanceValue)
         : CircuitElement(name, n1, n2, capacitanceValue, ElementType::CAPACITOR) {
     if (capacitanceValue <= 0) {
-        cerr << "Warning: Capacitor '" << getName()
-             << "' created with non-positive value: " << capacitanceValue << " Farads." << endl;
+        std::cerr << "Warning: Capacitor '" << getName()
+                  << "' created with non-positive value: " << capacitanceValue << " Farads." << std::endl;
     }
 }
 
-Capacitor::~Capacitor() {
-}
+Capacitor::~Capacitor() {}
 
-void Capacitor::applyStamps(/* CircuitMatrix& matrix */) const {
-    // Placeholder for MNA stamping logic for a capacitor
-    // This will be different from a resistor, especially in AC/transient analysis
-    cout << "Applying stamps for Capacitor: " << getName()
-         << " Value: " << getValue() << " Farads.";
-    if (getNode1() && getNode2()) {
-        cout << " Connected between Node " << getNode1()->getId()
-             << " (" << getNode1()->getName() << ")"
-             << " and Node " << getNode2()->getId()
-             << " (" << getNode2()->getName() << ").";
-    }
-    cout << endl;
-    // Example for DC analysis (open circuit):
-    // For DC, a capacitor is an open circuit, so it might not add conductance terms
-    // For transient analysis, it would be G = C/dt or similar
+// پیاده‌سازی تابع با امضای جدید
+void Capacitor::applyStamps(std::vector<std::vector<double>>& A,
+                            std::vector<double>& b,
+                            const std::map<std::string, int>& node_map,
+                            const std::vector<double>& x_prev,
+                            int mna_extra_vars_start_index,
+                            double t, double dt) const {
+    if (dt <= 1e-12) return; // جلوگیری از تقسیم بر صفر در گام اول
+
+    double C = getValue();
+    double g_eq = C / dt; // رسانایی معادل در روش اویلر پس‌رو
+
+    int n1_idx = (node_map.count(node1->getName())) ? node_map.at(node1->getName()) : -1;
+    int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
+
+    auto add_to_A = [&](int r, int c, double val) {
+        if (r >= 0 && c >= 0) A[r][c] += val;
+    };
+    auto add_to_b = [&](int r, double val) {
+        if (r >= 0) b[r] += val;
+    };
+
+    // اعمال رسانایی معادل
+    add_to_A(n1_idx, n1_idx, g_eq);
+    add_to_A(n2_idx, n2_idx, g_eq);
+    add_to_A(n1_idx, n2_idx, -g_eq);
+    add_to_A(n2_idx, n1_idx, -g_eq);
+
+    // گرفتن ولتاژ خازن از مرحله زمانی قبل
+    double v_prev1 = (n1_idx != -1 && n1_idx < x_prev.size()) ? x_prev[n1_idx] : 0.0;
+    double v_prev2 = (n2_idx != -1 && n2_idx < x_prev.size()) ? x_prev[n2_idx] : 0.0;
+    double v_c_prev = v_prev1 - v_prev2;
+
+    // اعمال منبع جریان معادل
+    double i_eq = g_eq * v_c_prev;
+    add_to_b(n1_idx, i_eq);
+    add_to_b(n2_idx, -i_eq);
 }

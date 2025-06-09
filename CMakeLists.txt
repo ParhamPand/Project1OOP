@@ -26,6 +26,8 @@ add_executable(project1 main.cpp
         src/ZenerDiode.cpp
         include/SinusoidalVoltageSource.h
         src/SinusoidalVoltageSource.cpp
+        include/MatrixSolver.h
+        src/MatrixSolver.cpp
 )
 
 target_include_directories(project1 PUBLIC

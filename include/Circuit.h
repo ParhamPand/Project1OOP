@@ -24,6 +24,7 @@ private:
     std::map<std::string, Node*> namedNodes;
     std::vector<CircuitElement*> allElements;
     int nextNodeId;
+    int mna_extra_vars_count;
 
     Node* getOrCreateNode(const std::string& nodeName);
 

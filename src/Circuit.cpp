@@ -101,6 +101,10 @@ Inductor* Circuit::addInductor(const std::string& name, const std::string& node1
     Node* n1 = getOrCreateNode(node1Name);
     Node* n2 = getOrCreateNode(node2Name);
     Inductor* ind = new Inductor(name, n1, n2, inductance); // Assumes Inductor constructor is similar to Resistor's
+
+    CircuitElement* elem = ind;
+    elem->mna_branch_index = mna_extra_vars_count++;
+
     allElements.push_back(ind);
     cout << "Inductor '" << name << "' added between " << node1Name << " and " << node2Name << "." << endl;
     return ind;
@@ -110,6 +114,10 @@ VoltageSource* Circuit::addVoltageSource(const std::string& name, const std::str
     Node* n_pos = getOrCreateNode(positiveNodeName);
     Node* n_neg = getOrCreateNode(negativeNodeName);
     VoltageSource* v_src = new VoltageSource(name, n_pos, n_neg, voltage);
+
+    CircuitElement* elem = v_src;
+    elem->mna_branch_index = mna_extra_vars_count++;
+
     allElements.push_back(v_src);
     cout << "VoltageSource '" << name << "' with value " << voltage << "V added. Positive: " << positiveNodeName << ", Negative: " << negativeNodeName << "." << endl;
     return v_src;
@@ -568,7 +576,7 @@ void Circuit::analyzeCircuit() {
 
     cout << "Applying stamps for all elements (placeholder):" << endl;
     for (const auto* elem : allElements) {
-        elem->applyStamps(/* placeholder for actual matrix */); //
+
     }
 
     cout << "Circuit analysis placeholder complete. Matrix solving would happen here." << endl;

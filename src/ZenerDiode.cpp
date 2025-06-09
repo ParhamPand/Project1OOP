@@ -1,23 +1,25 @@
 #include "ZenerDiode.h"
 #include <iostream>
+#include <vector>
+#include <map>
 
-using namespace std;
-
+// سازنده اصلی شما، بدون تغییر
 ZenerDiode::ZenerDiode(const std::string& name, Node* n1, Node* n2)
         : CircuitElement(name, n1, n2, 0.7, ElementType::ZENER_DIODE) {
-    cout << "Info: Zener Diode '" << getName() << "' created between node "
-         << n1->getName() << " (Anode) and " << n2->getName() << " (Cathode)." << endl;
+    std::cout << "Info: Zener Diode '" << getName() << "' created between node "
+              << n1->getName() << " (Anode) and " << n2->getName() << " (Cathode)." << std::endl;
 }
 
-ZenerDiode::~ZenerDiode() {
-    // Destructor
-}
+// مخرب اصلی شما، بدون تغییر
+ZenerDiode::~ZenerDiode() {}
 
-void ZenerDiode::applyStamps(/* CircuitMatrix& matrix */) const {
-    cout << "Applying stamps for Zener Diode: " << getName();
-    if (getNode1() && getNode2()) {
-        cout << " Connected between Node " << getNode1()->getName()
-             << " and Node " << getNode2()->getName() << ".";
-    }
-    cout << endl;
+// پیاده‌سازی applyStamps با بدنه خالی برای رفع خطای کامپایل
+void ZenerDiode::applyStamps(std::vector<std::vector<double>>& A,
+                             std::vector<double>& b,
+                             const std::map<std::string, int>& node_map,
+                             const std::vector<double>& x_prev,
+                             int mna_extra_vars_start_index,
+                             double t, double dt) const {
+    // این تابع فعلاً هیچ کاری انجام نمی‌دهد.
+    // دیود زنر در تحلیل گذرا نادیده گرفته می‌شود.
 }
