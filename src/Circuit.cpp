@@ -342,6 +342,92 @@ void Circuit::performCurrentTransientAnalysis(double t_step, double t_stop, cons
     }
 }
 
+void Circuit::performDCSweepAnalysis(const std::string& sourceName, double start, double stop, double step, const std::vector<std::string>& outputs) {
+
+    CircuitElement* sweepSource = getElement(sourceName);
+    if (!sweepSource) {
+        std::cerr << "Error: Source '" << sourceName << "' for DC sweep not found." << std::endl;
+        return;
+    }
+
+
+    std::map<std::string, int> node_map;
+    int node_count = 0;
+    for (const auto& pair : namedNodes) {
+        if (groundedNodes.find(pair.first) == groundedNodes.end()) {
+            node_map[pair.first] = node_count++;
+        }
+    }
+    int system_size = node_count + mna_extra_vars_count;
+
+
+    std::cout << sourceName;
+    for (const auto& out : outputs) {
+        std::cout << "\t" << out;
+    }
+    std::cout << std::endl;
+
+
+    for (double currentVal = start; (step > 0) ? (currentVal <= stop + 1e-9) : (currentVal >= stop - 1e-9); currentVal += step) {
+        sweepSource->setValue(currentVal);
+
+
+        std::vector<std::vector<double>> A(system_size, std::vector<double>(system_size, 0.0));
+        std::vector<double> b(system_size, 0.0);
+
+        for (const auto* elem : allElements) {
+            elem->applyDCStamps(A, b, node_map, node_count);
+        }
+
+        std::vector<double> x_current;
+        try {
+            MatrixSolver solver(A, b);
+            x_current = solver.solve();
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error during DC sweep at " << sourceName << " = " << currentVal << ": " << e.what() << std::endl;
+            return;
+        }
+
+
+        std::cout << currentVal;
+        std::regex out_parser(R"(([VI])\((\w+)\))");
+        std::smatch out_match;
+
+        for (const auto& req : outputs) {
+            double out_val = 0.0;
+            if (std::regex_match(req, out_match, out_parser)) {
+                std::string type = out_match[1];
+                std::string name = out_match[2];
+
+                if (type == "V") {
+                    if (node_map.count(name)) {
+                        out_val = x_current[node_map.at(name)];
+                    } else if (groundedNodes.count(name) || name == "0") {
+                        out_val = 0.0;
+                    }
+                } else if (type == "I") {
+                    CircuitElement* elem = getElement(name);
+                    if (elem) {
+                        if (elem->getElementType() == ElementType::VOLTAGE_SOURCE || elem->getElementType() == ElementType::INDUCTOR) {
+                            out_val = x_current[node_count + elem->mna_branch_index];
+                        } else if (elem->getElementType() == ElementType::RESISTOR) {
+                            Node* n1 = elem->getNode1();
+                            Node* n2 = elem->getNode2();
+                            double v1 = (n1 && node_map.count(n1->getName())) ? x_current[node_map.at(n1->getName())] : 0.0;
+                            double v2 = (n2 && node_map.count(n2->getName())) ? x_current[node_map.at(n2->getName())] : 0.0;
+                            out_val = (elem->getValue() > 1e-9) ? (v1 - v2) / elem->getValue() : 0.0;
+                        } else if (elem->getElementType() == ElementType::CURRENT_SOURCE) {
+                            out_val = elem->getValue();
+                        }
+                    }
+                }
+            }
+            std::cout << "\t" << out_val;
+        }
+        std::cout << std::endl;
+    }
+}
+
 CircuitElement* Circuit::getElement(const string& name) const {
     for (auto* elem : allElements) {
         if (elem->getName() == name) {
@@ -489,6 +575,7 @@ void Circuit::handleCommand(const string& input) {
     regex tranVoltageRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+V\((\w+)\)\s*)");
     regex tranCurrentRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+I\((\w+)\)\s*)");
     regex tranMultiRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+(.*))");
+    regex dcRegex(R"(\.dc\s+(\w+)\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+(.*))");
     // Regex for File Commands
     regex saveRegex(R"(\s*\.save\s+([\w\.-]+)\s*)");
     regex loadRegex(R"(\s*\.load\s+([\w\.-]+)\s*)");
@@ -922,6 +1009,33 @@ void Circuit::handleCommand(const string& input) {
         }
         return;
     }
+    // DC Sweep Analysis
+    if (regex_match(input, match, dcRegex)) {
+        try {
+            std::string sourceName = match[1];
+            double start = std::stod(match[2]);
+            double stop = std::stod(match[3]);
+            double step = std::stod(match[4]);
+            std::string outputs_str = match[5];
+
+            std::vector<std::string> outputs;
+            std::stringstream ss(outputs_str);
+            std::string out_req;
+            while (ss >> out_req) {
+                outputs.push_back(out_req);
+            }
+
+            if (outputs.empty()) {
+                std::cerr << "Error: No output specified for .dc analysis." << std::endl;
+            } else {
+                performDCSweepAnalysis(sourceName, start, stop, step, outputs);
+            }
+        } catch (const std::exception& e) {
+            std::cerr << "Error: Invalid parameters for .dc command." << std::endl;
+        }
+        return;
+    }
+
     // Save Circuit
     if (regex_match(input, match, saveRegex)) {
         string filename = match[1].str();

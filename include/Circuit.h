@@ -35,6 +35,7 @@ private:
 
     void performVoltageTransientAnalysis(double t_step, double t_stop, const std::string& output_node_name);
     void performCurrentTransientAnalysis(double t_step, double t_stop, const std::string& output_element_name);
+    void performDCSweepAnalysis(const std::string& sourceName, double start, double stop, double step, const std::vector<std::string>& outputs);
 
 
 public:

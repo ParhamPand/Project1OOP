@@ -15,7 +15,7 @@ SinusoidalVoltageSource::SinusoidalVoltageSource(const std::string& name, Node* 
 
 SinusoidalVoltageSource::~SinusoidalVoltageSource() {}
 
-// پیاده‌سازی تابع با امضای جدید
+
 void SinusoidalVoltageSource::applyStamps(std::vector<std::vector<double>>& A,
                                           std::vector<double>& b,
                                           const std::map<std::string, int>& node_map,
@@ -39,6 +39,13 @@ void SinusoidalVoltageSource::applyStamps(std::vector<std::vector<double>>& A,
     b[branch_idx] += voltage_at_t;
 }
 
+void SinusoidalVoltageSource::applyDCStamps(std::vector<std::vector<double>>& A,
+                          std::vector<double>& b,
+                          const std::map<std::string, int>& node_map,
+                          int mna_extra_vars_start_index) const {
+
+}
+
 // تابع printDetails بدون تغییر
 void SinusoidalVoltageSource::printDetails() const {
     std::cout << "Element: " << getName()
@@ -52,3 +59,4 @@ void SinusoidalVoltageSource::printDetails() const {
     }
     std::cout << std::endl;
 }
+

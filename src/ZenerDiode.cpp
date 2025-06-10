@@ -23,3 +23,10 @@ void ZenerDiode::applyStamps(std::vector<std::vector<double>>& A,
     // این تابع فعلاً هیچ کاری انجام نمی‌دهد.
     // دیود زنر در تحلیل گذرا نادیده گرفته می‌شود.
 }
+
+void ZenerDiode::applyDCStamps(std::vector<std::vector<double>>& A,
+                          std::vector<double>& b,
+                          const std::map<std::string, int>& node_map,
+                          int mna_extra_vars_start_index) const {
+
+}
