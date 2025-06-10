@@ -7,7 +7,7 @@
 Inductor::Inductor(const std::string& name, Node* n1, Node* n2, double inductanceValue)
         : CircuitElement(name, n1, n2, inductanceValue, ElementType::INDUCTOR) {
     if (inductanceValue <= 0) {
-        std::cerr << "Warning: Inductor '" << getName()
+        std::cout << "Warning: Inductor '" << getName()
                   << "' created with non-positive value: " << inductanceValue << " Henrys." << std::endl;
     }
 }
@@ -39,5 +39,5 @@ void Inductor::applyStamps(std::vector<std::vector<double>>& A,
     A[branch_idx][branch_idx] -= L / dt;
 
     double i_L_prev = (branch_idx < x_prev.size()) ? x_prev[branch_idx] : 0.0;
-    b[branch_idx] -= (L / dt) * i_L_prev;
+    b[branch_idx] += (L / dt) * i_L_prev;
 }

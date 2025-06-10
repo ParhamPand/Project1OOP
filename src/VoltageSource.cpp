@@ -7,7 +7,7 @@
 VoltageSource::VoltageSource(const std::string& name, Node* n1, Node* n2, double voltageValue)
         : CircuitElement(name, n1, n2, voltageValue, ElementType::VOLTAGE_SOURCE) {
     if (voltageValue == 0) {
-        std::cerr << "Info: VoltageSource '" << getName()
+        std::cout << "Info: VoltageSource '" << getName()
                   << "' created with zero value: " << voltageValue << " Volts." << std::endl;
     }
 }

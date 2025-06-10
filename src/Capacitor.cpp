@@ -7,7 +7,7 @@
 Capacitor::Capacitor(const std::string& name, Node* n1, Node* n2, double capacitanceValue)
         : CircuitElement(name, n1, n2, capacitanceValue, ElementType::CAPACITOR) {
     if (capacitanceValue <= 0) {
-        std::cerr << "Warning: Capacitor '" << getName()
+        std::cout << "Warning: Capacitor '" << getName()
                   << "' created with non-positive value: " << capacitanceValue << " Farads." << std::endl;
     }
 }

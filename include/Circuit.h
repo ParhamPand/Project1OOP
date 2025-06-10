@@ -28,6 +28,13 @@ private:
 
     Node* getOrCreateNode(const std::string& nodeName);
 
+
+    CircuitElement* getElement(const std::string& name) const;
+
+    void performVoltageTransientAnalysis(double t_step, double t_stop, const std::string& output_node_name);
+    void performCurrentTransientAnalysis(double t_step, double t_stop, const std::string& output_element_name);
+
+
 public:
     Circuit();
     ~Circuit();

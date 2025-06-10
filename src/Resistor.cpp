@@ -7,7 +7,7 @@
 Resistor::Resistor(const std::string& name, Node* n1, Node* n2, double resistanceValue)
         : CircuitElement(name, n1, n2, resistanceValue, ElementType::RESISTOR) {
     if (resistanceValue <= 0) {
-        std::cerr << "Warning: Resistor '" << getName()
+        std::cout << "Warning: Resistor '" << getName()
                   << "' created with non-positive value: " << resistanceValue << " Ohms." << std::endl;
     }
 }
