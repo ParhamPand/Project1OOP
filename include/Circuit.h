@@ -57,8 +57,8 @@ public:
     void handleCommand(const std::string& input);
 
     void printCircuitDetails() const;
-    void analyzeCircuit();
     void printNodes() const;
+
 
     Circuit(const Circuit&) = delete;
     Circuit& operator=(const Circuit&) = delete;

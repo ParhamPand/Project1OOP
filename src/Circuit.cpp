@@ -815,23 +815,3 @@ void Circuit::handleCommand(const string& input) {
 
 
 }
-void Circuit::analyzeCircuit() {
-    // Placeholder for actual circuit analysis (e.g., MNA setup and solution)
-    cout << "\n--- Circuit Analysis ---" << endl;
-    if (allElements.empty()) {
-        cout << "Circuit is empty. Nothing to analyze." << endl;
-        return;
-    }
-
-    cout << "Preparing for analysis..." << endl;
-    cout << "Number of nodes (excluding potential ground if implicit): " << namedNodes.size() << endl;
-    cout << "Number of elements: " << allElements.size() << endl;
-
-    cout << "Applying stamps for all elements (placeholder):" << endl;
-    for (const auto* elem : allElements) {
-
-    }
-
-    cout << "Circuit analysis placeholder complete. Matrix solving would happen here." << endl;
-    cout << "--- End of Analysis ---" << endl;
-}

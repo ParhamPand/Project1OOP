@@ -12,7 +12,7 @@ public:
     SinusoidalVoltageSource(const std::string& name, Node* n1, Node* n2, double offset, double amplitude, double frequency);
     ~SinusoidalVoltageSource() override;
 
-    // این تابع را override می‌کنیم تا تمام جزئیات را نمایش دهد
+
     void printDetails() const override;
     void applyStamps(std::vector<std::vector<double>>& A,
                      std::vector<double>& b,
