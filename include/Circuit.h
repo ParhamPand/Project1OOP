@@ -58,6 +58,10 @@ public:
 
     void printCircuitDetails() const;
     void printNodes() const;
+    void listElements() const;
+    void listElementsByType(const std::string& typeName) const;
+
+    void renameNode(const std::string& oldName, const std::string& newName);
 
 
     Circuit(const Circuit&) = delete;

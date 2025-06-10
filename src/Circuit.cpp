@@ -379,10 +379,96 @@ void Circuit::printNodes() const {
     cout << endl;
 }
 
+void Circuit::listElements() const {
+    if (allElements.empty()) {
+        cout << "There are no elements in the circuit." << endl;
+        return;
+    }
+
+    cout << "Circuit Elements List:" << endl;
+    for (const CircuitElement* elem : allElements) {
+        cout << "- ";
+        elem->printDetails();
+    }
+}
+
+void Circuit::listElementsByType(const std::string& typeName) const {
+    ElementType targetType = ElementType::UNDEFINED;
+    std::string lowerTypeName = typeName;
+    std::transform(lowerTypeName.begin(), lowerTypeName.end(), lowerTypeName.begin(), ::tolower);
+
+    if (lowerTypeName == "resistor") targetType = ElementType::RESISTOR;
+    else if (lowerTypeName == "capacitor") targetType = ElementType::CAPACITOR;
+    else if (lowerTypeName == "inductor") targetType = ElementType::INDUCTOR;
+    else if (lowerTypeName == "voltagesource") targetType = ElementType::VOLTAGE_SOURCE;
+    else if (lowerTypeName == "currentsource") targetType = ElementType::CURRENT_SOURCE;
+    else if (lowerTypeName == "diode") targetType = ElementType::DIODE;
+    else if (lowerTypeName == "zenerdiode") targetType = ElementType::ZENER_DIODE;
+    else if (lowerTypeName == "sinusoidalvoltagesource") targetType = ElementType::SINUSOIDAL_VOLTAGE_SOURCE;
+
+    if (targetType == ElementType::UNDEFINED) {
+        cout << "Error: Unknown element type '" << typeName << "'." << endl;
+        return;
+    }
+
+    bool found = false;
+    cout << "Listing all elements of type: " << typeName << endl;
+    for (const CircuitElement* elem : allElements) {
+        if (elem->getElementType() == targetType) {
+            cout << "- ";
+            elem->printDetails();
+            found = true;
+        }
+    }
+
+    if (!found) {
+        cout << "No elements of type '" << typeName << "' found in the circuit." << endl;
+    }
+}
+void Circuit::renameNode(const std::string& oldName, const std::string& newName) {
+    if (oldName == newName) {
+        cout << "Info: The new name is the same as the old name. No changes made." << endl;
+        return;
+    }
+
+
+    if (namedNodes.find(oldName) == namedNodes.end()) {
+        cout << "Error: Node '" << oldName << "' does not exist." << endl;
+        return;
+    }
+
+
+    if (namedNodes.find(newName) != namedNodes.end()) {
+        cout << "Error: A node with the name '" << newName << "' already exists." << endl;
+        return;
+    }
+
+
+    Node* nodeToRename = namedNodes.at(oldName);
+
+
+    nodeToRename->setName(newName);
+
+
+    namedNodes[newName] = nodeToRename;
+    namedNodes.erase(oldName);
+
+
+    if (groundedNodes.count(oldName)) {
+        groundedNodes.erase(oldName);
+        groundedNodes.insert(newName);
+    }
+
+    cout << "Node '" << oldName << "' successfully renamed to '" << newName << "'." << endl;
+}
+
 
 void Circuit::handleCommand(const string& input) {
     // Regex for list commands
     regex nodesRegex(R"(\s*\.nodes\s*)");
+    regex listByTypeRegex(R"(\s*\.list\s+(\w+)\s*)");
+    regex listRegex(R"(\s*\.list\s*)");
+    regex renameNodeRegex(R"(\s*\.rename\s+node\s+(\w+)\s+(\w+)\s*)");
     // Regex for add commands
     regex addResistorRegex(R"(add\s+R([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
     regex addCapacitorRegex(R"(add\s+C([A-Za-z0-9_]+)\s+(\w+)\s+(\w+)\s+([+-]?[0-9]*\.?[0-9]+(?:[eE][+-]?[0-9]+)?[a-zA-Z]*)$)");
@@ -405,6 +491,24 @@ void Circuit::handleCommand(const string& input) {
     // show Nodes
     if (regex_match(input, nodesRegex)) {
         printNodes();
+        return;
+    }
+    // show by component
+    if (regex_match(input, match, listByTypeRegex)) {
+        string typeName = match[1].str();
+        listElementsByType(typeName);
+        return;
+    }
+    // show all elements
+    if (regex_match(input, listRegex)) {
+        listElements();
+        return;
+    }
+    // rename nodes
+    if (regex_match(input, match, renameNodeRegex)) {
+        string oldName = match[1].str();
+        string newName = match[2].str();
+        renameNode(oldName, newName);
         return;
     }
 
@@ -609,9 +713,14 @@ void Circuit::handleCommand(const string& input) {
             return;
         }
 
+        if (!groundedNodes.empty()) {
+            cout << "Error: A ground node already exists in the circuit." << endl;
+            return;
+        }
+
         Node* node = getNode(nodeName);
         if (!node) {
-            cerr << "Node does not exist" << endl;
+            cout << "Error: Node '" << nodeName << "' does not exist." << endl;
             return;
         }
 
