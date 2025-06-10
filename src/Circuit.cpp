@@ -110,7 +110,6 @@ Inductor* Circuit::addInductor(const string& name, const string& node1Name, cons
     elem->mna_branch_index = mna_extra_vars_count++;
 
     allElements.push_back(ind);
-    cout << "Inductor '" << name << "' added between " << node1Name << " and " << node2Name << "." << endl;
     return ind;
 }
 
@@ -253,7 +252,7 @@ void Circuit::performCurrentTransientAnalysis(double t_step, double t_stop, cons
         return;
     }
 
-    // این شرط را برای بررسی گره زمین اضافه کنید
+
     if (groundedNodes.empty()) {
         cout << "Error: No ground node defined. Analysis is not possible." << endl;
         return;

@@ -3,7 +3,7 @@
 #include <vector>
 #include <map>
 
-// سازنده و مخرب بدون تغییر
+
 Inductor::Inductor(const std::string& name, Node* n1, Node* n2, double inductanceValue)
         : CircuitElement(name, n1, n2, inductanceValue, ElementType::INDUCTOR) {
     if (inductanceValue <= 0) {

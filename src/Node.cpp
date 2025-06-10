@@ -5,12 +5,10 @@
 using namespace std;
 
 Node::Node(int id, const string& name) : nodeId(id), nodeName(name) {
-    cout << "Node with ID " << nodeId << " and name " << nodeName << " created." << endl;
 }
 
 
 Node::~Node() {
-    cout << "Node with ID " << nodeId << " and name " << nodeName << " destroyed." << endl;
 }
 
 int Node::getId() const {
