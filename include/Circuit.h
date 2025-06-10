@@ -5,6 +5,7 @@
 #include <map>
 #include <stdexcept> // For std::runtime_error
 #include <set>
+#include "FileManager.h"
 
 // Forward declarations
 class Node;
@@ -25,6 +26,7 @@ private:
     std::vector<CircuitElement*> allElements;
     int nextNodeId;
     int mna_extra_vars_count;
+    FileManager fileManager;
 
     Node* getOrCreateNode(const std::string& nodeName);
 
@@ -54,6 +56,7 @@ public:
     Node* getNode(const std::string& name) const;
     const std::vector<CircuitElement*>& getElements() const;
     const std::map<std::string, Node*>& getNodes() const;
+    const std::set<std::string>& getGroundedNodes() const;
     void handleCommand(const std::string& input);
 
     void printCircuitDetails() const;
@@ -62,6 +65,8 @@ public:
     void listElementsByType(const std::string& typeName) const;
 
     void renameNode(const std::string& oldName, const std::string& newName);
+
+    void clear();
 
 
     Circuit(const Circuit&) = delete;

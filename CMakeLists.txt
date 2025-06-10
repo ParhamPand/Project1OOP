@@ -28,6 +28,8 @@ add_executable(project1 main.cpp
         src/SinusoidalVoltageSource.cpp
         include/MatrixSolver.h
         src/MatrixSolver.cpp
+        include/FileManager.h
+        src/FileManager.cpp
 )
 
 target_include_directories(project1 PUBLIC

@@ -179,6 +179,10 @@ const map<string, Node*>& Circuit::getNodes() const {
     return namedNodes;
 }
 
+const std::set<std::string>& Circuit::getGroundedNodes() const {
+    return this->groundedNodes;
+}
+
 
 void Circuit::performVoltageTransientAnalysis(double t_step, double t_stop, const string& output_node_name) {
     // 1. Validation Checks
@@ -485,7 +489,10 @@ void Circuit::handleCommand(const string& input) {
     regex tranVoltageRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+V\((\w+)\)\s*)");
     regex tranCurrentRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+I\((\w+)\)\s*)");
     regex tranMultiRegex(R"(\s*\.print\s+TRAN\s+([0-9.eE+-]+)\s+([0-9.eE+-]+)\s+(.*))");
-
+    // Regex for File Commands
+    regex saveRegex(R"(\s*\.save\s+([\w\.-]+)\s*)");
+    regex loadRegex(R"(\s*\.load\s+([\w\.-]+)\s*)");
+    regex newFileRegex(R"(NewFile\s+([\w\.-]+))");
 
     smatch match;
     // show Nodes
@@ -915,6 +922,23 @@ void Circuit::handleCommand(const string& input) {
         }
         return;
     }
+    // Save Circuit
+    if (regex_match(input, match, saveRegex)) {
+        string filename = match[1].str();
+        fileManager.saveCircuit(this, filename);
+        return;
+    }
+    // Load Circuit
+    if (regex_match(input, match, loadRegex)) {
+        string filename = match[1].str();
+        fileManager.loadCircuit(this, filename);
+        return;
+    }
+    // New File
+    if (regex_match(input, newFileRegex)) {
+        clear();
+        return;
+    }
 
 
 
@@ -923,4 +947,24 @@ void Circuit::handleCommand(const string& input) {
     cout << "Error: Syntax error\n";
 
 
+}
+
+void Circuit::clear() {
+    cout << "Clearing the circuit..." << endl;
+
+    for (CircuitElement* elem : allElements) {
+        delete elem;
+    }
+    allElements.clear();
+
+    for (auto const& pair : namedNodes) {
+        delete pair.second;
+    }
+    namedNodes.clear();
+
+    groundedNodes.clear();
+    nextNodeId = 0;
+    mna_extra_vars_count = 0;
+
+    cout << "Circuit cleared." << endl;
 }
