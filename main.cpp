@@ -1,25 +1,16 @@
-#include "Circuit.h"
-#include <iostream>
-#include <string>
+#include <QApplication>
+#include "mainwindow.h"
 
-using namespace std;
+int main(int argc, char *argv[]) {
+    // 1. یک نمونه از کل اپلیکیشن Qt می‌سازیم.
+    QApplication a(argc, argv);
 
-int main() {
-    Circuit myCircuit;
-    std::string command;
+    // 2. یک نمونه از پنجره اصلی که خودمان طراحی می‌کنیم، می‌سازیم.
+    MainWindow w;
 
-    while (true) {
-        getline(std::cin, command);
+    // 3. پنجره را نمایش می‌دهیم.
+    w.show();
 
-        if (command == "exit") {
-            break;
-        }
-        if (command == "print") {
-            myCircuit.printCircuitDetails();
-            continue;
-        }
-
-        myCircuit.handleCommand(command);
-    }
-    return 0;
+    // 4. اپلیکیشن را وارد حلقه رویدادها (Event Loop) می‌کنیم تا منتظر تعامل کاربر بماند.
+    return a.exec();
 }
