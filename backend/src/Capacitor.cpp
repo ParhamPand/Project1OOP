@@ -3,8 +3,8 @@
 #include <vector>
 #include <map>
 
-// سازنده و مخرب بدون تغییر
-Capacitor::Capacitor(const std::string& name, Node* n1, Node* n2, double capacitanceValue)
+// امضای سازنده با shared_ptr آپدیت شده
+Capacitor::Capacitor(const std::string& name, std::shared_ptr<Node> n1, std::shared_ptr<Node> n2, double capacitanceValue)
         : CircuitElement(name, n1, n2, capacitanceValue, ElementType::CAPACITOR) {
     if (capacitanceValue <= 0) {
         std::cout << "Warning: Capacitor '" << getName()
@@ -14,7 +14,7 @@ Capacitor::Capacitor(const std::string& name, Node* n1, Node* n2, double capacit
 
 Capacitor::~Capacitor() {}
 
-
+// بقیه توابع کلاس بدون تغییر باقی می‌مانند
 void Capacitor::applyStamps(std::vector<std::vector<double>>& A,
                             std::vector<double>& b,
                             const std::map<std::string, int>& node_map,
@@ -54,5 +54,4 @@ void Capacitor::applyDCStamps(std::vector<std::vector<double>>& A,
                               std::vector<double>& b,
                               const std::map<std::string, int>& node_map,
                               int mna_extra_vars_start_index) const {
-
 }

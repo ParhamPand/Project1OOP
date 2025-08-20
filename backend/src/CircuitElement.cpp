@@ -3,33 +3,16 @@
 
 using namespace std;
 
-CircuitElement::CircuitElement(const string& name, Node* n1, Node* n2, double val, ElementType type)
-        : name(name), node1(n1), node2(n2), value(val), type(type) {
-}
+CircuitElement::CircuitElement(const string& name, shared_ptr<Node> n1, shared_ptr<Node> n2, double val, ElementType type)
+        : name(name), node1(n1), node2(n2), value(val), type(type) {}
 
-CircuitElement::~CircuitElement() {
-    // Element does not own nodes, so no deletion here
-}
+CircuitElement::~CircuitElement() {}
 
-string CircuitElement::getName() const {
-    return name;
-}
-
-Node* CircuitElement::getNode1() const {
-    return node1;
-}
-
-Node* CircuitElement::getNode2() const {
-    return node2;
-}
-
-double CircuitElement::getValue() const {
-    return value;
-}
-
-ElementType CircuitElement::getElementType() const {
-    return type;
-}
+string CircuitElement::getName() const { return name; }
+shared_ptr<Node> CircuitElement::getNode1() const { return node1; }
+shared_ptr<Node> CircuitElement::getNode2() const { return node2; }
+double CircuitElement::getValue() const { return value; }
+ElementType CircuitElement::getElementType() const { return type; }
 
 string CircuitElement::getElementTypeString() const {
     switch (type) {
@@ -47,13 +30,10 @@ string CircuitElement::getElementTypeString() const {
 
 void CircuitElement::printDetails() const {
     cout << "Element: " << getName()
-              << ", Type: " << getElementTypeString()
-              << ", Value: " << getValue();
+         << ", Type: " << getElementTypeString()
+         << ", Value: " << getValue();
     if (node1 && node2) {
-        cout << ", Nodes: (" << node1->getName() << " [ID:" << node1->getId() << "]"
-                  << ", " << node2->getName() << " [ID:" << node2->getId() << "])";
-    } else {
-        cout << ", Nodes: (One or both nodes are null)";
+        cout << ", Nodes: (" << node1->getName() << ", " << node2->getName() << ")";
     }
     cout << endl;
 }

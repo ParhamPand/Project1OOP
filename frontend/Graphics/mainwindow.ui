@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>851</width>
-    <height>663</height>
+    <width>963</width>
+    <height>753</height>
    </rect>
   </property>
   <property name="font">
@@ -18,14 +18,24 @@
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
-  <widget class="QWidget" name="centralwidget"/>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QGridLayout" name="gridLayout">
+    <item row="0" column="0">
+     <widget class="QGraphicsView" name="circuitGraphicsView">
+      <property name="styleSheet">
+       <string notr="true">background-color: white;</string>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>851</width>
+     <width>963</width>
      <height>33</height>
     </rect>
    </property>
@@ -53,6 +63,11 @@
    <addaction name="menuNode_library"/>
   </widget>
   <widget class="QToolBar" name="toolBar">
+   <property name="font">
+    <font>
+     <pointsize>11</pointsize>
+    </font>
+   </property>
    <property name="windowTitle">
     <string>toolBar</string>
    </property>
@@ -62,9 +77,11 @@
    <attribute name="toolBarBreak">
     <bool>false</bool>
    </attribute>
+   <addaction name="actionAddWire"/>
    <addaction name="actionAddResistor"/>
    <addaction name="actionAddCapacitor"/>
    <addaction name="actionAddInductor"/>
+   <addaction name="actionAddGND"/>
   </widget>
   <action name="actionTransient">
    <property name="enabled">
@@ -74,9 +91,7 @@
     <string>Transiet</string>
    </property>
    <property name="font">
-    <font>
-     <pointsize>9</pointsize>
-    </font>
+    <font/>
    </property>
   </action>
   <action name="actionAcSweep">
@@ -172,6 +187,28 @@
   <action name="actionOpenNodeLibrary">
    <property name="text">
     <string>Component Library...</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionAddGND">
+   <property name="text">
+    <string>GND</string>
+   </property>
+   <property name="shortcut">
+    <string>G</string>
+   </property>
+   <property name="menuRole">
+    <enum>QAction::MenuRole::NoRole</enum>
+   </property>
+  </action>
+  <action name="actionAddWire">
+   <property name="text">
+    <string>Wire</string>
+   </property>
+   <property name="shortcut">
+    <string>W</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::NoRole</enum>

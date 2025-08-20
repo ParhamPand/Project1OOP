@@ -30,6 +30,8 @@ add_executable(project1
         frontend/Graphics/transientdialogbox.ui
         frontend/Graphics/acsweepdialog.ui
         frontend/Graphics/phasesweepdialog.ui
+        frontend/Graphics/propertiesdialog.ui
+        frontend/Graphics/sinusoidalsourcedialog.ui
 
         # --- Backend Source Files ---
         backend/src/Node.cpp
@@ -44,15 +46,38 @@ add_executable(project1
         backend/src/ZenerDiode.cpp
         backend/src/SinusoidalVoltageSource.cpp
         backend/src/MatrixSolver.cpp
-        backend/src/FileManager.cpp
         frontend/include/nodelibrarydialog.h
         frontend/src/nodelibrarydialog.cpp
+        frontend/src/graphicalcomponent.cpp
+        frontend/include/graphicalcomponent.h
+        frontend/include/graphicalresistor.h
+        frontend/src/graphicalresistor.cpp
+        frontend/include/circuitescene.h
+        frontend/src/circuitescene.cpp
+        frontend/include/propertiesdialog.h
+        frontend/src/propertiesdialog.cpp
+        frontend/include/graphicalcapacitor.h
+        frontend/src/graphicalcapacitor.cpp
+        frontend/include/graphicalinductor.h
+        frontend/src/graphicalinductor.cpp
+        frontend/include/graphicalground.h
+        frontend/src/graphicalground.cpp
+        frontend/include/graphicalvoltagesourcedc.h
+        frontend/src/graphicalvoltagesourcedc.cpp
+        frontend/include/graphicalcurrentsourcedc.h
+        frontend/src/graphicalcurrentsourcedc.cpp
+        frontend/include/graphicalvoltagesourcesin.h
+        frontend/src/graphicalvoltagesourcesin.cpp
+        frontend/include/sinusoidalsourcedialog.h
+        frontend/src/sinusoidalsourcedialog.cpp
+
 )
 
 # Add ALL header locations to the include path
 target_include_directories(project1 PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/backend/include
         ${CMAKE_CURRENT_SOURCE_DIR}/frontend/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/cereal/include
 )
 
 # Link the Qt libraries

@@ -52,3 +52,26 @@ void NodeLibraryDialog::on_componentTreeWidget_itemDoubleClicked(QTreeWidgetItem
         accept();
     }
 }
+
+void NodeLibraryDialog::on_searchLineEdit_textChanged(const QString &text)
+{
+    // Create an iterator to go through all items in the tree
+    QTreeWidgetItemIterator it(ui->componentTreeWidget);
+
+    while (*it) {
+        QTreeWidgetItem *item = *it;
+        // Check if the item's text contains the search text (case-insensitive)
+        bool matches = item->text(0).contains(text, Qt::CaseInsensitive);
+
+        // Hide or show the item based on the match
+        item->setHidden(!matches);
+
+        // --- Important: Keep parents visible ---
+        // If a child item matches, we must make sure its parent category is also visible.
+        if (matches && item->parent()) {
+            item->parent()->setHidden(false);
+        }
+
+        ++it;
+    }
+}

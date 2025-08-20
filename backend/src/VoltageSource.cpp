@@ -3,18 +3,16 @@
 #include <vector>
 #include <map>
 
-// سازنده و مخرب بدون تغییر
-VoltageSource::VoltageSource(const std::string& name, Node* n1, Node* n2, double voltageValue)
+VoltageSource::VoltageSource(const std::string& name, std::shared_ptr<Node> n1, std::shared_ptr<Node> n2, double voltageValue)
         : CircuitElement(name, n1, n2, voltageValue, ElementType::VOLTAGE_SOURCE) {
-    if (voltageValue == 0) {
-        std::cout << "Info: VoltageSource '" << getName()
-                  << "' created with zero value: " << voltageValue << " Volts." << std::endl;
-    }
 }
 
 VoltageSource::~VoltageSource() {}
 
-// پیاده‌سازی تابع با امضای جدید
+void VoltageSource::setValue(double val) {
+    this->value = val;
+}
+
 void VoltageSource::applyStamps(std::vector<std::vector<double>>& A,
                                 std::vector<double>& b,
                                 const std::map<std::string, int>& node_map,
@@ -34,10 +32,11 @@ void VoltageSource::applyStamps(std::vector<std::vector<double>>& A,
     if (n2_idx != -1) A[branch_idx][n2_idx] -= 1.0;
     b[branch_idx] += getValue();
 }
+
 void VoltageSource::applyDCStamps(std::vector<std::vector<double>>& A,
-                   std::vector<double>& b,
-                   const std::map<std::string, int>& node_map,
-                   int mna_extra_vars_start_index) const {
+                                  std::vector<double>& b,
+                                  const std::map<std::string, int>& node_map,
+                                  int mna_extra_vars_start_index) const {
     int n1_idx = (node_map.count(node1->getName())) ? node_map.at(node1->getName()) : -1;
     int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
     int branch_idx = mna_extra_vars_start_index + this->mna_branch_index;
@@ -50,8 +49,4 @@ void VoltageSource::applyDCStamps(std::vector<std::vector<double>>& A,
     if (n1_idx != -1) A[branch_idx][n1_idx] += 1.0;
     if (n2_idx != -1) A[branch_idx][n2_idx] -= 1.0;
     b[branch_idx] += getValue();
-}
-
-void VoltageSource::setValue(double val) {
-    this->value = val;
 }

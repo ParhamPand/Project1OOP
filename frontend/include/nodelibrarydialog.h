@@ -25,6 +25,7 @@ public:
 private slots:
     // A slot to handle when the user double-clicks an item in the tree
     void on_componentTreeWidget_itemDoubleClicked(QTreeWidgetItem *item, int column);
+    void on_searchLineEdit_textChanged(const QString &text);
 
 private:
     Ui::NodeLibraryDialog *ui;
