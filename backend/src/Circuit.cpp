@@ -391,3 +391,25 @@ void Circuit::performDCSweepAnalysis(const std::string& sourceName, double start
         std::cout << std::endl;
     }
 }
+
+void Circuit::mergeNodes(const std::string& nodeToKeep, const std::string& nodeToRemove)
+{
+    if (nodeToKeep == nodeToRemove || !namedNodes.count(nodeToKeep) || !namedNodes.count(nodeToRemove)) {
+        return;
+    }
+
+    auto keepNode = namedNodes.at(nodeToKeep);
+    auto removeNode = namedNodes.at(nodeToRemove);
+
+    // تمام قطعات را بررسی کن
+    for (const auto& elem : allElements) {
+        if (elem->getNode1() == removeNode) {
+            elem->node1 = keepNode;
+        }
+        if (elem->getNode2() == removeNode) {
+            elem->node2 = keepNode;
+        }
+    }
+    // گره اضافی را از لیست حذف کن
+    namedNodes.erase(nodeToRemove);
+}

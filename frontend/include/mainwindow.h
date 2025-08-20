@@ -13,13 +13,18 @@ enum class PlacementMode {
     Ground,
     VoltageSource_DC,
     CurrentSource_DC,
-    VoltageSource_Sin
+    VoltageSource_Sin,
+    Wire
 
 };
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
+
+
+class GraphicalComponent;
+
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -41,7 +46,9 @@ private slots:
     void on_actionAddVdc_triggered();
     void on_actionAddIdc_triggered();
     void on_actionAddVsin_triggered();
+    void on_actionAddWire_triggered();
     void onSceneClicked(const QPointF &location);
+    void onConnectionMade(GraphicalComponent *startComp, int startTerminalIndex, GraphicalComponent *endComp, int endTerminalIndex);
 
 private:
     Ui::MainWindow *ui;

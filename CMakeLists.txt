@@ -70,6 +70,8 @@ add_executable(project1
         frontend/src/graphicalvoltagesourcesin.cpp
         frontend/include/sinusoidalsourcedialog.h
         frontend/src/sinusoidalsourcedialog.cpp
+        frontend/include/graphicalwire.h
+        frontend/src/graphicalwire.cpp
 
 )
 

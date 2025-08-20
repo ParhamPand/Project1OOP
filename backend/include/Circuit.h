@@ -58,7 +58,7 @@ public:
     const std::vector<std::shared_ptr<CircuitElement>>& getElements() const;
     const std::map<std::string, std::shared_ptr<Node>>& getNodes() const;
     const std::set<std::string>& getGroundedNodes() const;
-
+    void mergeNodes(const std::string& nodeToKeep, const std::string& nodeToRemove);
     void clear();
 
     // --- Serialization ---

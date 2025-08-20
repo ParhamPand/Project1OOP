@@ -125,3 +125,17 @@ void GraphicalComponent::setLogicalComponent(std::shared_ptr<CircuitElement> log
 {
     m_logicalComponent = logicalComponent;
 }
+
+std::shared_ptr<CircuitElement> GraphicalComponent::getLogicalComponent() const
+{
+    return m_logicalComponent;
+}
+
+QVariant GraphicalComponent::itemChange(GraphicsItemChange change, const QVariant &value)
+{
+
+    if (change == ItemPositionHasChanged) {
+        emit componentMoved();
+    }
+    return QGraphicsObject::itemChange(change, value);
+}
