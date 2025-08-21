@@ -1,11 +1,13 @@
 #ifndef GRAPHICALCOMPONENT_H
 #define GRAPHICALCOMPONENT_H
 
+#include "nodelabelitem.h"
 #include <QGraphicsObject>
 #include <QKeyEvent>
+#include <QPointF>
 #include <memory>
 #include <vector>
-#include <QPointF>
+
 
 class QGraphicsSceneContextMenuEvent;
 class CircuitElement;
@@ -19,6 +21,7 @@ public:
     explicit GraphicalComponent(QGraphicsItem *parent = nullptr);
     void setLogicalComponent(std::shared_ptr<CircuitElement> logicalComponent);
     std::shared_ptr<CircuitElement> getLogicalComponent() const;
+    void updateNodeLabels();
 
 
     QRectF boundingRect() const override;
@@ -36,6 +39,7 @@ protected:
     void contextMenuEvent(QGraphicsSceneContextMenuEvent *event) override;
     QVariant itemChange(GraphicsItemChange change, const QVariant &value) override;
     std::shared_ptr<CircuitElement> m_logicalComponent;
+    std::vector<NodeLabelItem*> m_nodeLabels;
 
 
 };

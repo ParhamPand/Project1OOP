@@ -139,3 +139,32 @@ QVariant GraphicalComponent::itemChange(GraphicsItemChange change, const QVarian
     }
     return QGraphicsObject::itemChange(change, value);
 }
+
+void GraphicalComponent::updateNodeLabels()
+{
+
+    for (auto label : m_nodeLabels) {
+        delete label;
+    }
+    m_nodeLabels.clear();
+
+    if (!m_logicalComponent) return;
+
+
+    if (m_logicalComponent->getNode1()) {
+        QString node1Name = QString::fromStdString(m_logicalComponent->getNode1()->getName());
+        auto label1 = new NodeLabelItem(node1Name, this);
+        QPointF pos1 = getConnectionPoints()[0];
+        label1->setPos(pos1.x() - 25, pos1.y() - 25);
+        m_nodeLabels.push_back(label1);
+    }
+
+
+    if (m_logicalComponent->getNode2() && getConnectionPoints().size() > 1) {
+        QString node2Name = QString::fromStdString(m_logicalComponent->getNode2()->getName());
+        auto label2 = new NodeLabelItem(node2Name, this);
+        QPointF pos2 = getConnectionPoints()[1];
+        label2->setPos(pos2.x() + 5, pos2.y() - 25);
+        m_nodeLabels.push_back(label2);
+    }
+}

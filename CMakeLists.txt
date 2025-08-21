@@ -8,7 +8,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-find_package(Qt6 COMPONENTS Widgets REQUIRED)
+find_package(Qt6 COMPONENTS Widgets PrintSupport REQUIRED)
+
 
 set(CMAKE_AUTOUIC_SEARCH_PATHS ${CMAKE_CURRENT_SOURCE_DIR}/frontend/Graphics)
 
@@ -72,6 +73,13 @@ add_executable(project1
         frontend/src/sinusoidalsourcedialog.cpp
         frontend/include/graphicalwire.h
         frontend/src/graphicalwire.cpp
+        frontend/include/nodelabelitem.h
+        frontend/src/nodelabelitem.cpp
+        frontend/include/qcustomplot.h
+        frontend/src/qcustomplot.cpp
+        frontend/include/plotdialog.h
+        frontend/src/plotdialog.cpp
+        frontend/Graphics/plotdialog.ui
 
 )
 
@@ -82,5 +90,4 @@ target_include_directories(project1 PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/cereal/include
 )
 
-# Link the Qt libraries
-target_link_libraries(project1 PRIVATE Qt6::Widgets)
+target_link_libraries(project1 PRIVATE Qt6::Widgets Qt6::PrintSupport)

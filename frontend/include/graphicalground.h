@@ -9,8 +9,6 @@ Q_OBJECT
 
 public:
     explicit GraphicalGround(QGraphicsItem *parent = nullptr);
-
-    // Ground only has one connection point
     std::vector<QPointF> getConnectionPoints() const override;
 
 protected:

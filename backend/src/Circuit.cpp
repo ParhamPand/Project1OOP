@@ -148,88 +148,24 @@ const std::set<std::string>& Circuit::getGroundedNodes() const {
 }
 
 
-void Circuit::performVoltageTransientAnalysis(double t_step, double t_stop, const string& output_node_name) {
-    // 1. Validation Checks
-    if (t_step <= 0 || t_stop <= 0 || t_stop < t_step) {
-        cout << "Error: Invalid time step or stop time." << endl;
-        return;
+std::vector<std::pair<double, double>> Circuit::performVoltageTransientAnalysis(double t_start, double t_step, double t_stop, const string& output_node_name) {
+    std::vector<std::pair<double, double>> results; // همیشه یک وکتور خالی در ابتدا بساز
+
+    // 1. اعتبارسنجی ورودی‌ها
+    if (t_step <= 0 || t_stop <= 0 || t_stop < t_step || t_start < 0 || t_start > t_stop) {
+        cerr << "Error: Invalid time parameters for transient analysis." << endl;
+        return results; // در صورت خطا، وکتور خالی را برگردان
     }
     if (groundedNodes.empty()) {
-        cout << "Error: No ground node specified. Analysis cannot proceed." << endl;
-        return;
+        cerr << "Error: No ground node specified. Analysis cannot proceed." << endl;
+        return results;
     }
     if (namedNodes.find(output_node_name) == namedNodes.end()) {
-        cout << "Error: Output node '" << output_node_name << "' not found." << endl;
-        return;
+        cerr << "Error: Output node '" << output_node_name << "' not found." << endl;
+        return results;
     }
 
-    // 2. MNA System Initialization
-    map<string, int> node_map;
-    int node_count = 0;
-    for (const auto& pair : namedNodes) {
-        if (groundedNodes.find(pair.first) == groundedNodes.end()) {
-            node_map[pair.first] = node_count++;
-        }
-    }
-
-    int system_size = node_count + mna_extra_vars_count;
-    vector<double> x_prev(system_size, 0.0); // Solution vector from previous time step
-
-    int output_node_index = (output_node_name == *groundedNodes.begin() || output_node_name == "0")
-                            ? -1
-                            : node_map.at(output_node_name);
-
-    // 3. Time-Stepping Loop
-    cout << "Time\tV(" << output_node_name << ")" << endl;
-    for (double t = t_step; t <= t_stop; t += t_step) {
-        // a. Create and reset MNA matrices for the current time step
-        vector<vector<double>> A(system_size, vector<double>(system_size, 0.0));
-        vector<double> b(system_size, 0.0);
-
-        // b. Apply stamps from all elements
-        for (const auto& elem : allElements) {
-            elem->applyStamps(A, b, node_map, x_prev, node_count, t, t_step);
-        }
-
-        try {
-            // c. Solve the system Ax = b
-            MatrixSolver solver(A, b);
-            vector<double> x_current = solver.solve();
-
-            // d. Get and print the output voltage
-            double output_voltage = (output_node_index != -1) ? x_current[output_node_index] : 0.0;
-            cout << t << "\t" << output_voltage << endl;
-
-            // e. Update the state for the next iteration
-            x_prev = x_current;
-
-        } catch (const runtime_error& e) {
-            cout << "Error during simulation at t = " << t << ": " << e.what() << endl;
-            return; // Stop the analysis on solver failure
-        }
-    }
-}
-
-void Circuit::performCurrentTransientAnalysis(double t_step, double t_stop, const string& output_element_name) {
-    // --- Validation Section ---
-    if (t_step <= 0 || t_stop <= 0 || t_stop < t_step) {
-        cout << "Error: Invalid time step or stop time." << endl;
-        return;
-    }
-
-
-    if (groundedNodes.empty()) {
-        cout << "Error: No ground node defined. Analysis is not possible." << endl;
-        return;
-    }
-
-    auto target_element = getElement(output_element_name);
-    if (!target_element) {
-        cout << "Error: Element '" << output_element_name << "' not found." << endl;
-        return;
-    }
-
-    // MNA Setup
+    // 2. آماده‌سازی سیستم MNA (بدون تغییر)
     map<string, int> node_map;
     int node_count = 0;
     for (const auto& pair : namedNodes) {
@@ -241,25 +177,12 @@ void Circuit::performCurrentTransientAnalysis(double t_step, double t_stop, cons
     int system_size = node_count + mna_extra_vars_count;
     vector<double> x_prev(system_size, 0.0);
 
+    int output_node_index = (output_node_name == *groundedNodes.begin() || output_node_name == "0")
+                            ? -1
+                            : node_map.at(output_node_name);
 
-    // --- Calculate Initial State at t=0 (without printing) ---
-    vector<vector<double>> A_dc(system_size, vector<double>(system_size, 0.0));
-    vector<double> b_dc(system_size, 0.0);
-    for (const auto& elem : allElements) {
-        elem->applyStamps(A_dc, b_dc, node_map, vector<double>(system_size, 0.0), node_count, 0.0, t_step);
-    }
-    try {
-        MatrixSolver dc_solver(A_dc, b_dc);
-        x_prev = dc_solver.solve(); // x_prev now holds the state at t=0
-    } catch (const runtime_error& e) {
-        cout << "Error during initial DC analysis for current: " << e.what() << endl;
-        return;
-    }
-    // Print Header
-    cout << "Time\tI(" << output_element_name << ")" << endl;
-
-    // Time-Stepping Loop
-    for (double t = t_step ; t <= t_stop; t += t_step) {
+    // 3. حلقه شبیه‌سازی
+    for (double t = 0; t <= t_stop; t += t_step) {
         vector<vector<double>> A(system_size, vector<double>(system_size, 0.0));
         vector<double> b(system_size, 0.0);
 
@@ -271,39 +194,96 @@ void Circuit::performCurrentTransientAnalysis(double t_step, double t_stop, cons
             MatrixSolver solver(A, b);
             vector<double> x_current = solver.solve();
 
-            double output_current = 0.0;
-            // --- Current Calculation Logic ---
-            auto n1 = target_element->getNode1();
-            auto n2 = target_element->getNode2();
-            int n1_idx = (n1 && node_map.count(n1->getName())) ? node_map.at(n1->getName()) : -1;
-            int n2_idx = (n2 && node_map.count(n2->getName())) ? node_map.at(n2->getName()) : -1;
-
-            double v1 = (n1_idx != -1) ? x_current[n1_idx] : 0.0;
-            double v2 = (n2_idx != -1) ? x_current[n2_idx] : 0.0;
-
-            ElementType type = target_element->getElementType();
-            double value = target_element->getValue();
-
-            if (type == ElementType::VOLTAGE_SOURCE || type == ElementType::SINUSOIDAL_VOLTAGE_SOURCE || type == ElementType::INDUCTOR) {
-                output_current = x_current[node_count + target_element->mna_branch_index];
-            } else if (type == ElementType::RESISTOR) {
-                output_current = (value > 1e-9) ? (v1 - v2) / value : 0.0;
-            } else if (type == ElementType::CAPACITOR) {
-                double v1_prev = (n1_idx != -1 && n1_idx < x_prev.size()) ? x_prev[n1_idx] : 0.0;
-                double v2_prev = (n2_idx != -1 && n2_idx < x_prev.size()) ? x_prev[n2_idx] : 0.0;
-                output_current = (t_step > 1e-12) ? value * ((v1 - v2) - (v1_prev - v2_prev)) / t_step : 0.0;
-            } else if (type == ElementType::CURRENT_SOURCE) {
-                output_current = value;
+            // فقط بعد از زمان شروع، داده‌ها را ذخیره کن
+            if (t >= t_start) {
+                double output_voltage = (output_node_index != -1) ? x_current[output_node_index] : 0.0;
+                results.push_back({t, output_voltage});
             }
 
-            cout << t << "\t" << output_current << endl;
             x_prev = x_current;
 
         } catch (const runtime_error& e) {
-            cout << "Error during simulation at t = " << t << ": " << e.what() << endl;
-            return;
+            cerr << "Error during simulation at t = " << t << ": " << e.what() << endl;
+            return results;
         }
     }
+
+    return results;
+}
+
+std::vector<std::pair<double, double>> Circuit::performCurrentTransientAnalysis(double t_start, double t_step, double t_stop, const string& output_element_name) {
+    std::vector<std::pair<double, double>> results;
+
+    if (t_step <= 0 || t_stop <= 0 || t_stop < t_step || t_start < 0 || t_start > t_stop) {
+        cerr << "Error: Invalid time parameters for transient analysis." << endl;
+        return results;
+    }
+    if (groundedNodes.empty()) {
+        cerr << "Error: No ground node defined. Analysis is not possible." << endl;
+        return results;
+    }
+    auto target_element = getElement(output_element_name);
+    if (!target_element) {
+        cerr << "Error: Element '" << output_element_name << "' not found." << endl;
+        return results;
+    }
+
+
+    map<string, int> node_map;
+    int node_count = 0;
+    for (const auto& pair : namedNodes) {
+        if (groundedNodes.find(pair.first) == groundedNodes.end()) {
+            node_map[pair.first] = node_count++;
+        }
+    }
+    int system_size = node_count + mna_extra_vars_count;
+    vector<double> x_prev(system_size, 0.0);
+
+    for (double t = 0; t <= t_stop; t += t_step) {
+        vector<vector<double>> A(system_size, vector<double>(system_size, 0.0));
+        vector<double> b(system_size, 0.0);
+
+        for (const auto& elem : allElements) {
+            elem->applyStamps(A, b, node_map, x_prev, node_count, t, t_step);
+        }
+
+        try {
+            MatrixSolver solver(A, b);
+            vector<double> x_current = solver.solve();
+
+            if (t >= t_start) {
+                double output_current = 0.0;
+                auto n1 = target_element->getNode1();
+                auto n2 = target_element->getNode2();
+                int n1_idx = (n1 && node_map.count(n1->getName())) ? node_map.at(n1->getName()) : -1;
+                int n2_idx = (n2 && node_map.count(n2->getName())) ? node_map.at(n2->getName()) : -1;
+                double v1 = (n1_idx != -1) ? x_current[n1_idx] : 0.0;
+                double v2 = (n2_idx != -1) ? x_current[n2_idx] : 0.0;
+                ElementType type = target_element->getElementType();
+                double value = target_element->getValue();
+
+                if (type == ElementType::VOLTAGE_SOURCE || type == ElementType::SINUSOIDAL_VOLTAGE_SOURCE || type == ElementType::INDUCTOR) {
+                    output_current = x_current[node_count + target_element->mna_branch_index];
+                } else if (type == ElementType::RESISTOR) {
+                    output_current = (value > 1e-9) ? (v1 - v2) / value : 0.0;
+                } else if (type == ElementType::CAPACITOR) {
+                    double v1_prev = (n1_idx != -1 && n1_idx < x_prev.size()) ? x_prev[n1_idx] : 0.0;
+                    double v2_prev = (n2_idx != -1 && n2_idx < x_prev.size()) ? x_prev[n2_idx] : 0.0;
+                    output_current = (t_step > 1e-12) ? value * ((v1 - v2) - (v1_prev - v2_prev)) / t_step : 0.0;
+                } else if (type == ElementType::CURRENT_SOURCE) {
+                    output_current = value;
+                }
+                results.push_back({t, output_current});
+            }
+
+            x_prev = x_current;
+
+        } catch (const runtime_error& e) {
+            cerr << "Error during simulation at t = " << t << ": " << e.what() << endl;
+            return results;
+        }
+    }
+    return results;
 }
 
 void Circuit::performDCSweepAnalysis(const std::string& sourceName, double start, double stop, double step, const std::vector<std::string>& outputs) {
@@ -401,7 +381,6 @@ void Circuit::mergeNodes(const std::string& nodeToKeep, const std::string& nodeT
     auto keepNode = namedNodes.at(nodeToKeep);
     auto removeNode = namedNodes.at(nodeToRemove);
 
-    // تمام قطعات را بررسی کن
     for (const auto& elem : allElements) {
         if (elem->getNode1() == removeNode) {
             elem->node1 = keepNode;
@@ -410,6 +389,24 @@ void Circuit::mergeNodes(const std::string& nodeToKeep, const std::string& nodeT
             elem->node2 = keepNode;
         }
     }
-    // گره اضافی را از لیست حذف کن
     namedNodes.erase(nodeToRemove);
 }
+
+void Circuit::setNodeAsGround(const std::string& nodeName)
+{
+    if (namedNodes.count(nodeName)) {
+        groundedNodes.insert(nodeName);
+        std::cout << "Info: Node '" << nodeName << "' is now set as GROUND." << std::endl;
+    } else {
+        std::cerr << "Warning: Attempted to ground a non-existent node: " << nodeName << std::endl;
+    }
+}
+
+std::vector<std::pair<double, double>> Circuit::runVoltageTransientAnalysis(double t_start, double t_step, double t_stop, const std::string& output_node_name) {
+    return performVoltageTransientAnalysis(t_start, t_step, t_stop, output_node_name);
+}
+
+std::vector<std::pair<double, double>> Circuit::runCurrentTransientAnalysis(double t_start, double t_step, double t_stop, const std::string& output_element_name) {
+    return performCurrentTransientAnalysis(t_start, t_step, t_stop, output_element_name);
+}
+

@@ -3,6 +3,7 @@
 
 GraphicalGround::GraphicalGround(QGraphicsItem *parent) : GraphicalComponent(parent) {}
 
+
 std::vector<QPointF> GraphicalGround::getConnectionPoints() const
 {
     return { QPointF(0, -15) };
