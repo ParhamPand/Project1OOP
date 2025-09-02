@@ -13,6 +13,8 @@
 #include <cereal/types/string.hpp>
 #include <cereal/types/memory.hpp>
 #include <cereal/types/polymorphic.hpp>
+#include "SinusoidalVoltageSource.h"
+
 
 // Forward declarations
 class Node;
@@ -54,6 +56,9 @@ public:
     std::shared_ptr<SinusoidalVoltageSource> addSinusoidalVoltageSource(const std::string& name, const std::string& node1Name, const std::string& node2Name, double offset, double amplitude, double frequency, double phase);
     std::vector<std::pair<double, double>> runVoltageTransientAnalysis(double t_start, double t_step, double t_stop, const std::string& output_node_name);
     std::vector<std::pair<double, double>> runCurrentTransientAnalysis(double t_start, double t_step, double t_stop, const std::string& output_element_name);
+    std::vector<std::pair<double, double>> runACAnalysis(double omega_start, double omega_stop, int num_steps, const std::string& output_name);
+    std::vector<std::pair<double, double>> runPhaseSweepAnalysis(double phase_start, double phase_stop, int num_steps, const std::string& output_name);
+
 
 
     std::shared_ptr<Node> getNode(const std::string& name) const;

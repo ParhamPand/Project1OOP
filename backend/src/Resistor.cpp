@@ -2,6 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <complex>
+
 
 
 Resistor::Resistor(const std::string& name, std::shared_ptr<Node> n1, std::shared_ptr<Node> n2, double resistanceValue)
@@ -46,6 +48,21 @@ void Resistor::applyDCStamps(std::vector<std::vector<double>>& A,
     int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
 
     auto add_to_A = [&](int r, int c, double val) {
+        if (r >= 0 && c >= 0) A[r][c] += val;
+    };
+
+    add_to_A(n1_idx, n1_idx, g);
+    add_to_A(n2_idx, n2_idx, g);
+    add_to_A(n1_idx, n2_idx, -g);
+    add_to_A(n2_idx, n1_idx, -g);
+}
+
+void Resistor::applyACStamps(std::vector<std::vector<Complex>>& A, std::vector<Complex>& b, const std::map<std::string, int>& node_map, int mna_extra_vars_start_index, double omega) const {
+    double g = 1.0 / value;
+    int n1_idx = (node_map.count(node1->getName())) ? node_map.at(node1->getName()) : -1;
+    int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
+
+    auto add_to_A = [&](int r, int c, Complex val) {
         if (r >= 0 && c >= 0) A[r][c] += val;
     };
 

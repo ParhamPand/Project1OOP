@@ -2,8 +2,8 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <complex>
 
-// امضای سازنده با shared_ptr آپدیت شده
 Capacitor::Capacitor(const std::string& name, std::shared_ptr<Node> n1, std::shared_ptr<Node> n2, double capacitanceValue)
         : CircuitElement(name, n1, n2, capacitanceValue, ElementType::CAPACITOR) {
     if (capacitanceValue <= 0) {
@@ -14,7 +14,6 @@ Capacitor::Capacitor(const std::string& name, std::shared_ptr<Node> n1, std::sha
 
 Capacitor::~Capacitor() {}
 
-// بقیه توابع کلاس بدون تغییر باقی می‌مانند
 void Capacitor::applyStamps(std::vector<std::vector<double>>& A,
                             std::vector<double>& b,
                             const std::map<std::string, int>& node_map,
@@ -54,4 +53,19 @@ void Capacitor::applyDCStamps(std::vector<std::vector<double>>& A,
                               std::vector<double>& b,
                               const std::map<std::string, int>& node_map,
                               int mna_extra_vars_start_index) const {
+}
+
+void Capacitor::applyACStamps(std::vector<std::vector<Complex>>& A, std::vector<Complex>& b, const std::map<std::string, int>& node_map, int mna_extra_vars_start_index, double omega) const {
+    Complex g_eq(0.0, omega * value); // g = j * omega * C
+    int n1_idx = (node_map.count(node1->getName())) ? node_map.at(node1->getName()) : -1;
+    int n2_idx = (node_map.count(node2->getName())) ? node_map.at(node2->getName()) : -1;
+
+    auto add_to_A = [&](int r, int c, Complex val) {
+        if (r >= 0 && c >= 0) A[r][c] += val;
+    };
+
+    add_to_A(n1_idx, n1_idx, g_eq);
+    add_to_A(n2_idx, n2_idx, g_eq);
+    add_to_A(n1_idx, n2_idx, -g_eq);
+    add_to_A(n2_idx, n1_idx, -g_eq);
 }

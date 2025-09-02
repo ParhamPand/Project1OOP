@@ -9,11 +9,18 @@
 #include "ZenerDiode.h"
 #include "SinusoidalVoltageSource.h"
 #include "MatrixSolver.h"
+#include "ComplexMatrixSolver.h"
 #include <iostream>
 #include <regex>
 #include <stdexcept>
 #include <algorithm>
 #include <cereal/types/polymorphic.hpp>
+#include <cmath>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 
 CEREAL_REGISTER_TYPE(Resistor);
 CEREAL_REGISTER_TYPE(Capacitor);
@@ -410,3 +417,152 @@ std::vector<std::pair<double, double>> Circuit::runCurrentTransientAnalysis(doub
     return performCurrentTransientAnalysis(t_start, t_step, t_stop, output_element_name);
 }
 
+std::vector<std::pair<double, double>> Circuit::runACAnalysis(double omega_start, double omega_stop, int num_steps, const std::string& output_name) {
+    std::vector<std::pair<double, double>> results;
+
+    bool hasSinSource = false;
+    for (const auto& elem : allElements) {
+        if (dynamic_cast<SinusoidalVoltageSource*>(elem.get())) {
+            hasSinSource = true;
+            break;
+        }
+    }
+    if (!hasSinSource) {
+        std::cerr << "Error: AC analysis requires at least one Sinusoidal Voltage Source in the circuit." << std::endl;
+        return results; // برگرداندن وکتور خالی
+    }
+
+    if (omega_start <= 0 || omega_stop <= omega_start || num_steps <= 0) {
+        std::cerr << "Error: Invalid frequency parameters for AC analysis." << std::endl;
+        return results;
+    }
+
+
+    map<string, int> node_map;
+    int node_count = 0;
+    for (const auto& pair : namedNodes) {
+        if (groundedNodes.find(pair.first) == groundedNodes.end()) {
+            node_map[pair.first] = node_count++;
+        }
+    }
+    int system_size = node_count + mna_extra_vars_count;
+
+    double omega_step = (omega_stop - omega_start) / num_steps;
+    for (int i = 0; i <= num_steps; ++i) {
+        double omega = omega_start + i * omega_step;
+
+
+        std::vector<std::vector<Complex>> A(system_size, std::vector<Complex>(system_size, {0,0}));
+        std::vector<Complex> b(system_size, {0,0});
+
+
+        for (const auto& elem : allElements) {
+            elem->applyACStamps(A, b, node_map, node_count, omega);
+        }
+
+        try {
+            ComplexMatrixSolver solver(A, b);
+            std::vector<Complex> x = solver.solve();
+
+
+            double output_magnitude = 0.0;
+            std::string type = output_name.substr(0, 1);
+            std::string name = output_name.substr(2, output_name.length() - 3);
+
+            if (type == "V") {
+                if (node_map.count(name)) {
+                    output_magnitude = std::abs(x[node_map.at(name)]);
+                }
+            } else if (type == "I") {
+                auto elem = getElement(name);
+                if (elem && elem->mna_branch_index != -1) {
+                    output_magnitude = std::abs(x[node_count + elem->mna_branch_index]);
+                }
+            }
+
+            results.push_back({omega, output_magnitude});
+
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error during AC analysis at omega = " << omega << ": " << e.what() << std::endl;
+            return results;
+        }
+    }
+
+    return results;
+}
+
+std::vector<std::pair<double, double>> Circuit::runPhaseSweepAnalysis(double phase_start, double phase_stop, int num_steps, const std::string& output_name) {
+    std::vector<std::pair<double, double>> results;
+
+
+    SinusoidalVoltageSource* sweepSource = nullptr;
+    int sinSourceCount = 0;
+    for (const auto& elem : allElements) {
+        if (auto casted_source = dynamic_cast<SinusoidalVoltageSource*>(elem.get())) {
+            sweepSource = casted_source;
+            sinSourceCount++;
+        }
+    }
+
+    if (sinSourceCount != 1) {
+        std::cerr << "Error: Phase Sweep analysis requires exactly one Sinusoidal Voltage Source in the circuit. Found: " << sinSourceCount << std::endl;
+        return results;
+    }
+
+
+    double original_phase = sweepSource->getPhase();
+    double omega = sweepSource->getFrequency();
+
+    map<string, int> node_map;
+
+    int node_count = 0;
+    for (const auto& pair : namedNodes) {
+        if (groundedNodes.find(pair.first) == groundedNodes.end()) {
+            node_map[pair.first] = node_count++;
+        }
+    }
+    int system_size = node_count + mna_extra_vars_count;
+
+    double phase_step = (phase_stop - phase_start) / num_steps;
+    for (int i = 0; i <= num_steps; ++i) {
+        double current_phase = phase_start + i * phase_step;
+        sweepSource->setParameters(sweepSource->getOffset(), sweepSource->getAmplitude(), sweepSource->getFrequency(), current_phase); // فاز را موقتاً تغییر بده
+
+        std::vector<std::vector<Complex>> A(system_size, std::vector<Complex>(system_size, {0,0}));
+        std::vector<Complex> b(system_size, {0,0});
+
+        for (const auto& elem : allElements) {
+            elem->applyACStamps(A, b, node_map, node_count, omega);
+        }
+
+        try {
+            ComplexMatrixSolver solver(A, b);
+            std::vector<Complex> x = solver.solve();
+
+            double output_magnitude = 0.0;
+            std::string type = output_name.substr(0, 1);
+            std::string name = output_name.substr(2, output_name.length() - 3);
+
+            if (type == "V") {
+                if (node_map.count(name)) {
+                    output_magnitude = std::abs(x[node_map.at(name)]);
+                }
+            } else if (type == "I") {
+                auto elem = getElement(name);
+                if (elem && elem->mna_branch_index != -1) {
+                    output_magnitude = std::abs(x[node_count + elem->mna_branch_index]);
+                }
+            }
+
+            results.push_back({current_phase, output_magnitude});
+
+        } catch (const std::runtime_error& e) {
+            std::cerr << "Error during Phase Sweep at phase = " << current_phase << ": " << e.what() << std::endl;
+            sweepSource->setParameters(sweepSource->getOffset(), sweepSource->getAmplitude(), sweepSource->getFrequency(), original_phase); // فاز را به حالت اول برگردان
+            return results;
+        }
+    }
+    sweepSource->setParameters(sweepSource->getOffset(), sweepSource->getAmplitude(), sweepSource->getFrequency(), original_phase);
+
+    return results;
+}

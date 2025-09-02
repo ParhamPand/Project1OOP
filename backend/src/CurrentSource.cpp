@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <complex>
 
 CurrentSource::CurrentSource(const std::string& name, std::shared_ptr<Node> n1, std::shared_ptr<Node> n2, double currentValue)
         : CircuitElement(name, n1, n2, currentValue, ElementType::CURRENT_SOURCE) {}
@@ -35,3 +36,5 @@ void CurrentSource::applyDCStamps(std::vector<std::vector<double>>& A,
     if (n1_idx != -1) b[n1_idx] -= getValue();
     if (n2_idx != -1) b[n2_idx] += getValue();
 }
+
+void CurrentSource::applyACStamps(std::vector<std::vector<Complex>>& A, std::vector<Complex>& b, const std::map<std::string, int>& node_map, int mna_extra_vars_start_index, double omega) const {}

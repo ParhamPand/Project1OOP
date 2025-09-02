@@ -298,14 +298,58 @@ void MainWindow::on_actionTransient_triggered()
     }
 }
 
-void MainWindow::on_actionAcSweep_triggered() {
+void MainWindow::on_actionAcSweep_triggered()
+{
     AcSweepDialog dialog(this);
-    dialog.exec();
+    if (dialog.exec() == QDialog::Accepted) {
+
+        double startOmega = dialog.getStartFrequency();
+        double endOmega = dialog.getEndFrequency();
+        int steps = dialog.getNumberOfSteps();
+        std::string outputName = dialog.getOutputName();
+
+        auto results = m_circuit->runACAnalysis(startOmega, endOmega, steps, outputName);
+
+
+        if (!results.empty()) {
+            QString plotTitle = "AC Sweep Analysis for " + QString::fromStdString(outputName);
+            QString xAxisLabel = "Angular Frequency (rad/s)";
+            QString yAxisLabel = "Magnitude";
+
+            PlotDialog plotDialog(results, plotTitle, xAxisLabel, yAxisLabel, this);
+            plotDialog.exec();
+        } else {
+            QMessageBox::warning(this, "Analysis Error",
+                                 "AC analysis failed. Please ensure there is at least one sinusoidal source and check parameters.");
+        }
+    }
 }
 
-void MainWindow::on_actionPhaseSweep_triggered() {
+void MainWindow::on_actionPhaseSweep_triggered()
+{
     PhaseSweepDialog dialog(this);
-    dialog.exec();
+    if (dialog.exec() == QDialog::Accepted) {
+
+        double startPhase = dialog.getStartPhase();
+        double endPhase = dialog.getEndPhase();
+        int steps = dialog.getNumberOfSteps();
+        std::string outputName = dialog.getOutputName();
+
+
+        auto results = m_circuit->runPhaseSweepAnalysis(startPhase, endPhase, steps, outputName);
+
+        if (!results.empty()) {
+            QString plotTitle = "Phase Sweep Analysis for " + QString::fromStdString(outputName);
+            QString xAxisLabel = "Phase (Degrees)";
+            QString yAxisLabel = "Magnitude";
+
+            PlotDialog plotDialog(results, plotTitle, xAxisLabel, yAxisLabel, this);
+            plotDialog.exec();
+        } else {
+            QMessageBox::warning(this, "Analysis Error",
+                                 "Phase Sweep analysis failed. Please ensure there is exactly one sinusoidal source in the circuit.");
+        }
+    }
 }
 
 void MainWindow::on_actionOpenNodeLibrary_triggered() {

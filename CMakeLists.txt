@@ -80,6 +80,8 @@ add_executable(project1
         frontend/include/plotdialog.h
         frontend/src/plotdialog.cpp
         frontend/Graphics/plotdialog.ui
+        backend/include/ComplexMatrixSolver.h
+        backend/src/ComplexMatrixSolver.cpp
 
 )
 

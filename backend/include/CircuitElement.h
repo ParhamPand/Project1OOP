@@ -4,9 +4,12 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <complex>
 #include <cereal/cereal.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/memory.hpp>
+
+using Complex = std::complex<double>;
 
 enum class ElementType {
     RESISTOR, CAPACITOR, INDUCTOR, DIODE, ZENER_DIODE,
@@ -39,7 +42,9 @@ public:
     }
     virtual void applyStamps(std::vector<std::vector<double>>& A, std::vector<double>& b, const std::map<std::string, int>& node_map, const std::vector<double>& x_prev, int mna_extra_vars_start_index, double t, double dt) const = 0;
     virtual void applyDCStamps(std::vector<std::vector<double>>& A, std::vector<double>& b, const std::map<std::string, int>& node_map, int mna_extra_vars_start_index) const = 0;
+    virtual void applyACStamps(std::vector<std::vector<Complex>>& A, std::vector<Complex>& b,const std::map<std::string, int>& node_map, int mna_extra_vars_start_index, double omega) const = 0;
     virtual void printDetails() const;
+
 
     // تابع serialize برای کلاس پایه
     template<class Archive>
